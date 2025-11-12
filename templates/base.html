@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+ <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
+    {% block head %} 
+    {% endblock %}
+    <!-- <link rel="icon" type="image/x-icon" href="/static/img/logo.png"> -->
+  </head>
+  <body>
+    <!--The header of the page-->
+    <header>
+      <!-- <a href="{{ url_for('home') }}">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Forest Portal Logo" class="logo">
+      </a> -->
+      <h1>Pychat</h1>
+    </header>
+
+    <!--The navigation bar-->
+    <nav>
+      <ul>
+        <li><a>Direct Messages</a></li>
+        <li><a>My account</a></li>
+      </ul>
+    </nav>
+
+    {% block content %}
+    {% endblock %}
+
+    <footer>
+      <p>© 2025 Project IA4. PyChat</p>
+    </footer>
+  </body>
+</html>
