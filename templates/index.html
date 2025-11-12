@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Flask Chat</title>
+<style>
+body { font-family: Arial, Helvetica, sans-serif; max-width: 900px; margin: 2rem auto; }
+#chat { border: 1px solid #ddd; height: 400px; overflow-y: auto; padding: 1rem; background: #fafafa }
+.msg { margin-bottom: 0.6rem }
+.sys { color: #666; font-style: italic }
+.me { font-weight: 600 }
+#controls { margin-top: 1rem; display:flex; gap:8px }
+input[type="text"]{ flex:1; padding:8px }
+</style>
+</head>
+<body>
+<h1>Simple Chat</h1>
+
+
+<label>Username: <input id="username" type="text" placeholder="Your name" /></label>
+<div id="chat"></div>
+
+
+<div id="controls">
+<input id="message" type="text" placeholder="Type a message..." autocomplete="off" />
+<button id="send">Send</button>
+</div>
+
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const socket = io();
+const chat = document.getElementById('chat');
+const sendBtn = document.getElementById('send');
+const msgInput = document.getElementById('message');
+const usernameInput = document.getElementById('username');
+
+
+function appendMessage(html, cls='msg'){
+const d = document.createElement('div');
+d.className = cls;
+d.innerHTML = html;
+chat.appendChild(d);
+chat.scrollTop = chat.scrollHeight;
+}
+
+
+socket.on('connect', () => {
+appendMessage('Connected to server.', 'sys');
+});
+
+
+socket.on('disconnect', () => {
+appendMessage('Disconnected from server.', 'sys');
+});
+
+
+socket.on('system_message', data => {
+appendMessage(escapeHtml(data.msg), 'sys');
+});
+
+
+socket.on('receive_message', data => {
+const name = escapeHtml(data.username || 'Anonymous');
+const text = escapeHtml(data.msg || '');
+appendMessage(`<strong>${name}:</strong> ${text}`);
+});
+
+
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendMessage(); });
+
+
+function sendMessage(){
+const username = usernameInput.value.trim() || 'Anonymous';
+const msg = msgInput.value.trim();
+if(!msg) return;
+socket.emit('send_message', { username, msg });
+msgInput.value = '';
+}
+
+
+// Announce join when username field loses focus (optional)
+usernameInput.addEventListener('change', () => {
+const username = usernameInput.value.trim() || 'Anonymous';
+socket.emit('join', { username });
+});
+
+
+// Simple escape
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
