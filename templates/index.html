@@ -5,17 +5,15 @@
 {% endblock %}
 
 {% block content %}
-
   <h1>Simple Chat</h1>
-  <label>Username: <input id="username" type="text" placeholder="Your name" /></label>
   <div id="chat"></div>
-
-
   <div id="controls">
     <input id="message" type="text" placeholder="Type a message..." autocomplete="off" />
     <button id="send">Send</button>
   </div>
-
+  <script>
+    window.currentUsername = "{{ username }}";
+  </script>
 {% endblock %}
 
 {% block script %}
