@@ -13,12 +13,17 @@ USERS_FILE = 'users.json'
 def load_users():
     if os.path.exists(USERS_FILE):
         with open(USERS_FILE, 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+            # Normalize older format where value was password string -> convert to dict
+            for uname, val in list(data.items()):
+                if isinstance(val, str):
+                    data[uname] = {'password': val, 'email': ''}
+            return data
     return {}
 
 def save_users(users):
     with open(USERS_FILE, 'w') as f:
-        json.dump(users, f)
+        json.dump(users, f, indent=2)
 
 users = load_users()
 
@@ -38,24 +43,28 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        if username in users and users[username] == password:
-            session['username'] = username
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid username or password')
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        if username in users:
+            user = users[username]
+            if user.get('password') == password:
+                session['username'] = username
+                return redirect(url_for('index'))
+        flash('Invalid username or password')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        if username in users:
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        email = request.form.get('email', '').strip()
+        if not email:
+            flash('Email is required')
+        elif username in users:
             flash('Username already exists')
         else:
-            users[username] = password
+            users[username] = {'password': password, 'email': email}
             save_users(users)
             flash('Registration successful. Please log in.')
             return redirect(url_for('login'))
