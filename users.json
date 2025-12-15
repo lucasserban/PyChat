@@ -1,1 +1,30 @@
-{"Leonard": "1234", "luchi": "123"}
+{
+  "Leonard": {
+    "password": "1234",
+    "email": ""
+  },
+  "luchi": {
+    "password": "123",
+    "email": ""
+  },
+  "Muie": {
+    "password": "wow",
+    "email": "leonard2005@sugi.com"
+  },
+  "Www": {
+    "password": "www",
+    "email": "ww@gmail.com"
+  },
+  "www": {
+    "password": "222",
+    "email": "w222wa@gmai.com"
+  },
+  "wwww": {
+    "password": "wwww",
+    "email": "www@s"
+  },
+  "leo": {
+    "password": "leo",
+    "email": "leonardneacsa2005@gmail.com"
+  }
+}

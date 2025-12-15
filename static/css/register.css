@@ -47,9 +47,10 @@ body {
 }
 
 .register-container input[type="text"],
+.register-container input[type="email"],
 .register-container input[type="password"] {
 	appearance: none;
-	width: 100%;
+	width: 93%;
 	padding: 12px 14px;
 	border-radius: 12px;
 	border: 1px solid rgba(255,255,255,0.12);
@@ -117,7 +118,7 @@ body {
 	padding: 10px 12px;
 	border-radius: 10px;
 	margin-top: 8px;
-	background: rgba(239, 68, 68, 0.12);
+	background: rgba(239, 68, 68, 0.25);
 	border: 1px solid rgba(239, 68, 68, 0.25);
 	color: #fecaca; /* red-200 */
 }
