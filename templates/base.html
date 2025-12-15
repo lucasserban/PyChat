@@ -14,9 +14,10 @@
           <a class="brand" href="#">PyChat</a>
         </div>
         <div class="nav-right">
-          <a class="nav-link" href="#">My Account</a>
+          <a class="nav-link" href="{{ url_for('account')}}">My Account</a>
           <a class="nav-link" href="#">Global Chat</a>
           <a class="nav-link" href="#">Direct Messages</a>
+          <a class="nav-link logout-link" href="{{ url_for('logout')}}">Logout</a>
         </div>
       </nav>
     </header>

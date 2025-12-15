@@ -5,3 +5,9 @@ header {
     padding: 0px 30px;
     justify-content: left;
 }
+
+.nav-right {
+    margin-left: 50px;
+    display: flex;
+    gap: 12px;
+}

@@ -61,6 +61,11 @@ def register():
             return redirect(url_for('login'))
     return render_template('register.html')
 
+@app.route('/myAccount')
+@login_required
+def account():
+    return render_template('myAccount.html', username=session.get('username'))
+
 @app.route('/logout')
 def logout():
     session.pop('username', None)
