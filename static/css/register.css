@@ -1,0 +1,131 @@
+/* Modern, accessible styling for the register page */
+
+:root {
+	--bg: #0f172a;
+	--panel: #111827;
+	--panel-2: #0b1223;
+	--text: #e5e7eb;
+	--muted: #9ca3af;
+	--primary: #3b82f6;
+	--primary-700: #1d4ed8;
+	--success: #10b981;
+	--danger: #ef4444;
+	--ring: rgba(59, 130, 246, 0.35);
+	--radius: 14px;
+	--shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+body {
+	background: radial-gradient(1200px 600px at 10% -10%, #1f2937 0%, var(--bg) 50%, #0b1020 100%);
+	color: var(--text);
+	font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+.register-container {
+	max-width: 420px;
+	margin: 4.5rem auto 3rem;
+	padding: 2rem;
+	background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+	border: 1px solid rgba(255,255,255,0.06);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	backdrop-filter: blur(6px);
+}
+
+.register-container h1 {
+	margin: 0 0 1.25rem 0;
+	font-size: 1.75rem;
+	font-weight: 700;
+	letter-spacing: 0.2px;
+	color: #ffffff;
+}
+
+.register-container form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.register-container input[type="text"],
+.register-container input[type="password"] {
+	appearance: none;
+	width: 100%;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid rgba(255,255,255,0.12);
+	background: rgba(3, 6, 23, 0.55);
+	color: var(--text);
+	outline: none;
+	transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.register-container input::placeholder {
+	color: var(--muted);
+}
+
+.register-container input:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 4px var(--ring);
+	background: rgba(6, 10, 30, 0.7);
+}
+
+.register-container button[type="submit"] {
+	margin-top: 6px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid rgba(255,255,255,0.12);
+	background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
+	color: #fff;
+	font-weight: 600;
+	letter-spacing: 0.2px;
+	cursor: pointer;
+	transition: transform 120ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+
+.register-container button[type="submit"]:hover {
+	transform: translateY(-1px);
+	filter: brightness(1.05);
+}
+
+.register-container button[type="submit"]:active {
+	transform: translateY(0);
+}
+
+.register-container p {
+	margin-top: 1rem;
+	color: var(--muted);
+	font-size: 0.95rem;
+}
+
+.register-container a {
+	color: var(--primary);
+	text-decoration: none;
+}
+
+.register-container a:hover {
+	text-decoration: underline;
+}
+
+/* Flash messages */
+.flashes {
+	list-style: none;
+	margin: 1rem 0 0 0;
+	padding: 0;
+}
+
+.flashes li {
+	padding: 10px 12px;
+	border-radius: 10px;
+	margin-top: 8px;
+	background: rgba(239, 68, 68, 0.12);
+	border: 1px solid rgba(239, 68, 68, 0.25);
+	color: #fecaca; /* red-200 */
+}
+
+/* Small screens */
+@media (max-width: 420px) {
+	.register-container {
+		margin: 2.5rem 1rem;
+		padding: 1.25rem;
+	}
+}
