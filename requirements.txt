@@ -3,3 +3,4 @@ flask-socketio==5.5.1
 python-engineio==4.12.3
 python-socketio
 eventlet==0.33.3
+Flask-SQLAlchemy==3.1.1

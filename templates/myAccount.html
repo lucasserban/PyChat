@@ -7,6 +7,16 @@
 {% block content %}
     <h1>My Account</h1>
     <div class="account-info">
-        <p><strong>Username:</strong> {{ username }}</p>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        
+        <form method="POST">
+            <label>Email:</label>
+            <input type="email" name="email" value="{{ user.email or '' }}">
+            <br>
+            <label>Bio:</label>
+            <input type="text" name="bio" value="{{ user.bio or '' }}">
+            <br>
+            <button type="submit">Update Profile</button>
+        </form>
     </div>
 {% endblock %}
