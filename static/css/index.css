@@ -17,6 +17,9 @@ body {
   margin: 2rem auto;
   background: radial-gradient(1200px 600px at 10% -10%, #1f2937 0%, var(--bg) 50%, #0b1020 100%);
   color: var(--text);
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  background-attachment: fixed;
 }
 
 .site-header {

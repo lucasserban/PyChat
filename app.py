@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_  # <--- Added this import for complex queries
 from datetime import datetime
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'BestProjectOfAllTime'
@@ -93,7 +94,7 @@ def login():
         
         user = User.query.filter_by(username=username).first()
         
-        if user and user.password == password:
+        if user and check_password_hash(user.password, password):
             session['username'] = user.username
             return redirect(url_for('index'))
         flash('Invalid username or password')
@@ -109,7 +110,8 @@ def register():
         if User.query.filter_by(username=username).first():
             flash('Username already exists')
         else:
-            new_user = User(username=username, password=password, email=email)
+            pw_hash = generate_password_hash(password)
+            new_user = User(username=username, password=pw_hash, email=email)
             db.session.add(new_user)
             db.session.commit()
             flash('Registration successful. Please log in.')
