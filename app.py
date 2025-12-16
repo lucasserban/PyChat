@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import or_  # <--- Added this import for complex queries
 from datetime import datetime
 from functools import wraps
 
@@ -59,6 +60,30 @@ def index():
     
     history = [{'username': m.sender_username, 'msg': m.content} for m in messages]
     return render_template('index.html', username=session.get('username'), history=history)
+
+# --- NEW: Direct Messages Route ---
+@app.route('/dms')
+@app.route('/dms/<username>')
+@login_required
+def dms(username=None):
+    current_user = session.get('username')
+    users = User.query.all()
+    history = []
+    
+    if username:
+        # Fetch conversation history between current_user and selected username
+        # We need messages where:
+        # (Sender is Me AND Recipient is Them) OR (Sender is Them AND Recipient is Me)
+        messages = Message.query.filter(
+            or_(
+                (Message.sender_username == current_user) & (Message.recipient_username == username),
+                (Message.sender_username == username) & (Message.recipient_username == current_user)
+            )
+        ).order_by(Message.timestamp.asc()).all()
+        
+        history = messages
+
+    return render_template('dms.html', users_list=users, active_recipient=username, history=history)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -138,6 +163,35 @@ def handle_message(data):
         
         # Emit to global chat
         emit('receive_message', {'username': username, 'msg': msg_content}, room='global_chat')
+
+# --- NEW: Private Message Events ---
+
+@socketio.on('join_dm')
+def handle_join_dm(data):
+    username = data.get('username')
+    recipient = data.get('recipient')
+    
+    # Create a unique room name for this pair of users
+    # Sorting ensures 'userA-userB' is the same room as 'userB-userA'
+    room = f"dm_{'-'.join(sorted([username, recipient]))}"
+    join_room(room)
+    print(f"{username} joined DM room: {room}")
+
+@socketio.on('send_private_message')
+def handle_private_message(data):
+    sender = session.get('username')
+    recipient = data.get('recipient')
+    msg_content = data.get('msg')
+    
+    if msg_content and recipient:
+        # 1. Save to Database
+        new_msg = Message(sender_username=sender, recipient_username=recipient, content=msg_content)
+        db.session.add(new_msg)
+        db.session.commit()
+        
+        # 2. Emit to the specific DM room
+        room = f"dm_{'-'.join(sorted([sender, recipient]))}"
+        emit('receive_private_message', {'sender': sender, 'msg': msg_content}, room=room)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

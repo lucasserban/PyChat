@@ -11,12 +11,12 @@
     <header class="site-header">
       <nav class="nav">
         <div class="nav-left">
-          <a class="brand" href="#">PyChat</a>
+          <a class="brand" href="{{ url_for('index') }}">PyChat</a>
         </div>
         <div class="nav-right">
           <a class="nav-link" href="{{ url_for('account')}}">My Account</a>
-          <a class="nav-link" href="#">Global Chat</a>
-          <a class="nav-link" href="#">Direct Messages</a>
+          <a class="nav-link" href="{{ url_for('index') }}">Global Chat</a>
+          <a class="nav-link" href="{{ url_for('dms') }}">Direct Messages</a>
           <a class="nav-link logout-link" href="{{ url_for('logout')}}">Logout</a>
         </div>
       </nav>

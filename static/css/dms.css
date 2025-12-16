@@ -1,0 +1,141 @@
+/* Split Layout Container */
+.dm-container {
+    display: flex;
+    height: 80vh; /* Occupy most of the screen */
+    max-width: 1200px;
+    margin: 20px auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #fff;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Left Side: The Chat Window */
+.dm-chat-area {
+    flex: 3; /* Takes up 75% of width */
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+/* Right Side: The User List */
+.dm-sidebar {
+    flex: 1; /* Takes up 25% of width */
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #ddd; /* Separator */
+}
+
+/* Sidebar Styling */
+.sidebar-header {
+    padding: 15px;
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+.user-list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.user-card {
+    display: block;
+    padding: 15px;
+    text-decoration: none;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+.user-card:hover {
+    background-color: #f0f0f0;
+}
+
+.user-card.active {
+    background-color: #e3f2fd;
+    border-left: 4px solid #007bff;
+}
+
+/* Chat Area Styling */
+.chat-header {
+    padding: 15px;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-input-area {
+    padding: 15px;
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input-area input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+}
+
+.chat-input-area button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Message Bubbles */
+.msg-bubble {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 0.95em;
+    line-height: 1.4;
+    position: relative;
+}
+
+/* Messages sent by ME */
+.msg-sent {
+    align-self: flex-end; /* Push to right */
+    background-color: #007bff;
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+
+/* Messages received from OTHERS */
+.msg-received {
+    align-self: flex-start; /* Push to left */
+    background-color: #e9ecef;
+    color: #333;
+    border-bottom-left-radius: 2px;
+}
+
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #888;
+    font-size: 1.2em;
+}
