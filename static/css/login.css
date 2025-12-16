@@ -25,10 +25,16 @@ body {
     margin: 4.5rem auto 3rem;
     padding: 2rem;
     background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%) !important;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(6px);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: box-shadow 0.2s;
+}
+
+.login-container:hover {
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22);
 }
 
 .login-container h1 {

@@ -1,141 +1,267 @@
-/* Split Layout Container */
+/* Use the same variables as index.css */
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --panel-2: #0b1223;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --primary: #3b82f6;
+  --primary-700: #1d4ed8;
+  --ring: rgba(59, 130, 246, 0.35);
+  --radius: 14px;
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  max-width: 900px;
+  margin: 2rem auto;
+  background: radial-gradient(1200px 600px at 10% -10%, #1f2937 0%, var(--bg) 50%, #0b1020 100%);
+  color: var(--text);
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  background-attachment: fixed;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+}
+
+.nav-right {
+  display: flex;
+  gap: 12px;
+}
+
+.nav-link {
+  color: var(--text);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.nav-link:hover {
+  background: rgba(255,255,255,0.06);
+  color: #ffffff;
+}
+
+.logout-link {
+  color: #fecaca;
+}
+
+.brand {
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.brand:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+
+.logout-link:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ffcccc;
+}
+
+#controls button {
+  padding:10px 12px;
+  border-radius:10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  transition: transform 120ms ease, filter 160ms ease;
+}
+
+#controls button:hover { 
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
 .dm-container {
-    display: flex;
-    height: 80vh; /* Occupy most of the screen */
-    max-width: 1200px;
-    margin: 20px auto;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #fff;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  display: flex;
+  height: 70vh;
+  max-width: 1100px;
+  margin: 32px auto 0 auto;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  overflow: hidden;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18); /* match index.css */
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);              /* glass effect */
+  -webkit-backdrop-filter: blur(8px);      /* Safari support */
+  transition: box-shadow 0.2s;
 }
 
-/* Left Side: The Chat Window */
-.dm-chat-area {
-    flex: 3; /* Takes up 75% of width */
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid #eee;
-    background-color: #f9f9f9;
+.dm-container:hover {
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22); /* match index.css hover */
 }
 
-/* Right Side: The User List */
+/* Sidebar */
 .dm-sidebar {
-    flex: 1; /* Takes up 25% of width */
-    background-color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #ddd; /* Separator */
+  flex: 1;
+  background: var(--panel-2);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  min-width: 220px;
 }
 
-/* Sidebar Styling */
 .sidebar-header {
-    padding: 15px;
-    background-color: #007bff;
-    color: white;
-    font-weight: bold;
-    text-align: center;
+  padding: 18px 0;
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+  text-align: center;
+  font-size: 1.1em;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-top-left-radius: var(--radius);
 }
 
 .user-list {
-    overflow-y: auto;
-    flex: 1;
+  overflow-y: auto;
+  flex: 1;
+  background: transparent;
 }
 
 .user-card {
-    display: block;
-    padding: 15px;
-    text-decoration: none;
-    color: #333;
-    border-bottom: 1px solid #eee;
-    transition: background 0.2s;
-    cursor: pointer;
+  display: block;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.18s, color 0.18s;
+  cursor: pointer;
+  font-size: 1em;
+  border-left: 4px solid transparent;
+  border-radius: 0 8px 8px 0;
 }
-
 .user-card:hover {
-    background-color: #f0f0f0;
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--primary);
 }
-
 .user-card.active {
-    background-color: #e3f2fd;
-    border-left: 4px solid #007bff;
+  background: var(--primary);
+  color: #fff;
+  border-left: 4px solid var(--primary-700);
 }
 
-/* Chat Area Styling */
+/* Chat Area */
+.dm-chat-area {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(12, 17, 34, 0.65) 0%, rgba(8, 12, 26, 0.85) 100%);
+}
+
 .chat-header {
-    padding: 15px;
-    background-color: #fff;
-    border-bottom: 1px solid #ddd;
-    font-weight: bold;
-    font-size: 1.1em;
+  padding: 18px 20px;
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-weight: 600;
+  font-size: 1.1em;
+  letter-spacing: 0.2px;
+  color: var(--text);
 }
 
 .chat-messages {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  flex: 1;
+  padding: 22px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: transparent;
 }
 
 .chat-input-area {
-    padding: 15px;
-    background-color: #fff;
-    border-top: 1px solid #ddd;
-    display: flex;
-    gap: 10px;
+  padding: 16px 20px;
+  background: transparent;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  gap: 10px;
 }
-
 .chat-input-area input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    outline: none;
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(3, 6, 23, 0.55);
+  color: var(--text);
+  outline: none;
+  font-size: 1em;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
-
+.chat-input-area input::placeholder {
+  color: var(--muted);
+}
+.chat-input-area input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--ring);
+  background: rgba(6, 10, 30, 0.7);
+}
 .chat-input-area button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1em;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 160ms ease;
+}
+.chat-input-area button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
 }
 
 /* Message Bubbles */
 .msg-bubble {
-    max-width: 70%;
-    padding: 10px 15px;
-    border-radius: 15px;
-    font-size: 0.95em;
-    line-height: 1.4;
-    position: relative;
+  max-width: 70%;
+  padding: 10px 18px;
+  border-radius: 16px;
+  font-size: 1em;
+  line-height: 1.5;
+  position: relative;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
-
-/* Messages sent by ME */
 .msg-sent {
-    align-self: flex-end; /* Push to right */
-    background-color: #007bff;
-    color: white;
-    border-bottom-right-radius: 2px;
+  align-self: flex-end;
+  background: var(--primary);
+  color: #fff;
+  border-bottom-right-radius: 4px;
 }
-
-/* Messages received from OTHERS */
 .msg-received {
-    align-self: flex-start; /* Push to left */
-    background-color: #e9ecef;
-    color: #333;
-    border-bottom-left-radius: 2px;
+  align-self: flex-start;
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
 }
 
 .empty-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: #888;
-    font-size: 1.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  font-size: 1.15em;
+  background: transparent;
 }

@@ -73,10 +73,22 @@ body {
   border: 1px solid rgba(255,255,255,0.12);
   height: 400px;
   overflow-y: auto;
-  padding: 1rem;
-  background: linear-gradient(180deg, rgba(12, 17, 34, 0.65) 0%, rgba(8, 12, 26, 0.85) 100%);
-  border-radius: 12px;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(120deg, rgba(17,24,39,0.85) 60%, rgba(59,130,246,0.08) 100%);
+  border: 1.5px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: box-shadow 0.2s;
 }
+
+.panel:hover,
+.dm-container:hover,
+#chat:hover {
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22);
+}
+
 
 .msg {
   margin-bottom: 0.6rem 
