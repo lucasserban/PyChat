@@ -19,11 +19,11 @@
             <div id="dm-history" class="chat-messages">
                 {% for msg in history %}
                         <div class="msg-bubble {{ 'msg-sent' if msg.sender_username == session['username'] else 'msg-received' }}">
-                            
+
                             {% if msg.image_filename %}
                                 <img src="{{ url_for('static', filename='chat_uploads/' + msg.image_filename) }}" class="chat-image">
                             {% endif %}
-                            
+
                             {% if msg.content %}
                                 <div class="msg-text">{{ msg.content }}</div>
                             {% endif %}
@@ -45,19 +45,46 @@
         {% endif %}
     </div>
 
-    <div class="dm-sidebar">
-        <div class="sidebar-header">People</div>
-        <div class="user-list">
-            {% for u in users_list %}
-                {% if u.username != session['username'] %}
-                    <a href="{{ url_for('dms', username=u.username) }}" 
-                       class="user-card {{ 'active' if active_recipient == u.username else '' }}">
-                        @{{ u.username }}
-                    </a>
-                {% endif %}
-            {% endfor %}
-        </div>
+<div class="dm-sidebar">
+    <div class="sidebar-header">Friends</div>
+
+    <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <form method="POST" style="display:flex; gap:5px;">
+            <input type="text" name="search_username" placeholder="Find user..." 
+                   style="width: 100%; padding: 6px; border-radius: 6px; border:none; outline:none; background: rgba(0,0,0,0.3); color:white;">
+            <button type="submit" style="background:var(--primary); border:none; color:white; border-radius:6px; cursor:pointer;">🔍</button>
+        </form>
     </div>
+
+    <div class="user-list">
+        {% if search_results %}
+            <div style="padding: 10px; font-size: 0.9em; color: var(--muted);">Search Results:</div>
+            {% for u in search_results %}
+                <div class="user-card" style="display: flex; justify-content: space-between; align-items: center; cursor: default;">
+                    <span>@{{ u.username }}</span>
+                    <a href="{{ url_for('send_request', username=u.username) }}" 
+                       style="background: var(--primary); padding: 2px 8px; border-radius: 4px; color: white; text-decoration: none; font-size: 0.8em;">
+                       Add
+                    </a>
+                </div>
+            {% endfor %}
+            <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+        {% endif %}
+
+        {% for u in users_list %}
+            <a href="{{ url_for('dms', username=u.username) }}" 
+               class="user-card {{ 'active' if active_recipient == u.username else '' }}">
+                @{{ u.username }}
+            </a>
+        {% else %}
+            {% if not search_results %}
+                <div style="padding: 20px; text-align: center; color: var(--muted); font-size: 0.9em;">
+                    No friends yet.<br>Search above to add some!
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
 
 </div>
 

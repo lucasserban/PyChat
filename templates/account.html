@@ -56,6 +56,43 @@
             
             <button type="submit" class="save-btn">Save Changes</button>
         </form>
+
+
+    </form> <div class="pending-panel">
+            <h3>Pending Friend Requests</h3>
+            
+            {% if pending_requests %}
+                <div class="requests-list">
+                    {% for req in pending_requests %}
+                        <div class="request-item">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                {% if req.sender.profile_pic %}
+                                    <img src="{{ url_for('static', filename='profile_pics/' + req.sender.profile_pic) }}" 
+                                         style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">
+                                        {{ req.sender.username[0].upper() }}
+                                    </div>
+                                {% endif %}
+                                <span>{{ req.sender.username }}</span>
+                            </div>
+                            
+                            <div style="display: flex; gap: 8px;">
+                                <a href="{{ url_for('accept_request', request_id=req.id) }}" 
+                                   class="req-btn accept-btn">Accept</a>
+                                <a href="{{ url_for('reject_request', request_id=req.id) }}" 
+                                   class="req-btn decline-btn">Decline</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <p>There are no pending friend requests.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 {% endblock %}
 
