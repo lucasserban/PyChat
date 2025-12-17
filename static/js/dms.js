@@ -26,12 +26,11 @@ function appendMessage(data, isSentByMe) {
     const div = document.createElement('div');
     div.className = isSentByMe ? 'msg-bubble msg-sent' : 'msg-bubble msg-received';
     
-    // 1. Dacă mesajul are imagine
+    // 1. Imagine
     if (data.image) {
         const img = document.createElement('img');
-        // Verificăm dacă e base64 (începe cu data:) sau path de server
         if (data.image.startsWith('data:')) {
-             img.src = data.image; // Pentru preview rapid (opțional) sau dacă serverul întoarce base64
+             img.src = data.image; 
         } else {
              img.src = '/static/chat_uploads/' + data.image;
         }
@@ -39,12 +38,20 @@ function appendMessage(data, isSentByMe) {
         div.appendChild(img);
     }
 
-    // 2. Dacă mesajul are text
+    // 2. Text
     if (data.msg) {
         const textDiv = document.createElement('div');
         textDiv.className = 'msg-text';
         textDiv.innerText = data.msg;
         div.appendChild(textDiv);
+    }
+
+    // 3. Oră (NOU)
+    if (data.timestamp) {
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'msg-time';
+        timeDiv.innerText = data.timestamp;
+        div.appendChild(timeDiv);
     }
     
     chatContainer.appendChild(div);
@@ -53,15 +60,13 @@ function appendMessage(data, isSentByMe) {
 
 // Listen for incoming private messages
 socket.on('receive_private_message', data => {
-    // Verificăm dacă mesajul aparține conversației curente
     if (data.sender === window.activeRecipient || data.sender === window.currentUser) {
         const isMe = data.sender === window.currentUser;
         
-        // Adaptăm datele pentru appendMessage
-        // Serverul trimite probabil { msg: "...", image: "..." }
         appendMessage({
             msg: data.msg,
-            image: data.image
+            image: data.image,
+            timestamp: data.timestamp // <--- Transmitem ora
         }, isMe);
     }
 });

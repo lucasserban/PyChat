@@ -99,7 +99,21 @@ def dms(username=None):
                 (Message.sender_username == username) & (Message.recipient_username == current_user)
             )
         ).order_by(Message.timestamp.asc()).all()
-        history = messages
+        
+        # --- CONVERSIE FUS ORAR PENTRU ISTORIC DM ---
+
+        for m in messages:
+
+            romania_tz = timezone(timedelta(hours=2))
+            current_time = datetime.now(romania_tz).strftime('%H:%M')
+            
+            # Creăm un dicționar pentru a putea modifica formatul orei
+            history.append({
+                'sender_username': m.sender_username,
+                'content': m.content,
+                'image_filename': m.image_filename,
+                'timestamp': current_time
+            })
 
     return render_template('dms.html', users_list=users, active_recipient=username, history=history)
 
@@ -311,8 +325,17 @@ def handle_private_message(data):
         new_msg = Message(sender_username=sender, recipient_username=recipient, content=msg)
         db.session.add(new_msg)
         db.session.commit()
+        
+        # Ora curentă România
+        romania_tz = timezone(timedelta(hours=2))
+        current_time = datetime.now(romania_tz).strftime('%H:%M')
+
         room = f"dm_{'-'.join(sorted([sender, recipient]))}"
-        emit('receive_private_message', {'sender': sender, 'msg': msg}, room=room)
+        emit('receive_private_message', {
+            'sender': sender, 
+            'msg': msg,
+            'timestamp': current_time
+        }, room=room)
 
 @socketio.on('upload_private_image')
 def handle_private_image(data):
