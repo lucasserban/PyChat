@@ -18,16 +18,16 @@ function escapeHtml(s) {
 }
 
 socket.on('connect', () => {
-    appendMessage('Connected to server.', 'sys');
+    // appendMessage('Connected to server.', 'sys');
     socket.emit('join', { username });
 });
 
 socket.on('disconnect', () => {
-    appendMessage('Disconnected from server.', 'sys');
+    // appendMessage('Disconnected from server.', 'sys');
 });
 
 socket.on('system_message', data => {
-    appendMessage(escapeHtml(data.msg), 'sys');
+    // appendMessage(escapeHtml(data.msg), 'sys');
 });
 
 socket.on('receive_message', data => {
