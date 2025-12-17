@@ -33,6 +33,11 @@ body {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     text-align: center;
+    transition: box-shadow 0.2s;
+}
+
+.profile-container:hover {
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22);
 }
 
 /* Wrapper to center the image or div */

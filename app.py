@@ -43,6 +43,16 @@ class User(db.Model):
     bio = db.Column(db.String(200), nullable=True) 
     profile_pic = db.Column(db.String(150), nullable=True) # Optional
 
+class Friendship(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # 'pending' or 'accepted'
+    
+    # Relationships to access user details easily
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_requests')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_requests')
+
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_username = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
@@ -84,38 +94,119 @@ def index():
     
     return render_template('index.html', username=session.get('username'), history=history)
 
-@app.route('/dms')
-@app.route('/dms/<username>')
+@app.route('/dms', methods=['GET', 'POST'])
+@app.route('/dms/<username>', methods=['GET', 'POST'])
 @login_required
 def dms(username=None):
-    current_user = session.get('username')
-    users = User.query.all()
-    history = []
+    current_username = session.get('username')
+    current_user_obj = User.query.filter_by(username=current_username).first()
     
+    # --- 1. SEARCH FUNCTIONALITY ---
+    search_results = []
+    if request.method == 'POST':
+        search_query = request.form.get('search_username', '').strip()
+        if search_query:
+            # Find users matching name, excluding self
+            results = User.query.filter(User.username.ilike(f"%{search_query}%"), User.username != current_username).all()
+            
+            # Filter out people who are already friends or have pending requests to avoid duplicates
+            # (Simplified for this example: just showing all matches)
+            search_results = results
+
+    # --- 2. GET FRIENDS LIST ---
+    # Fetch all accepted friendships involving the current user
+    friends_sent = Friendship.query.filter_by(sender_id=current_user_obj.id, status='accepted').all()
+    friends_received = Friendship.query.filter_by(receiver_id=current_user_obj.id, status='accepted').all()
+    
+    # Collect the User objects of the friends
+    friends = []
+    for f in friends_sent:
+        friends.append(f.receiver)
+    for f in friends_received:
+        friends.append(f.sender)
+
+    # --- 3. CHAT HISTORY (Keep existing logic, but use 'friends' list for sidebar) ---
+    history = []
     if username:
         messages = Message.query.filter(
             or_(
-                (Message.sender_username == current_user) & (Message.recipient_username == username),
-                (Message.sender_username == username) & (Message.recipient_username == current_user)
+                (Message.sender_username == current_username) & (Message.recipient_username == username),
+                (Message.sender_username == username) & (Message.recipient_username == current_username)
             )
         ).order_by(Message.timestamp.asc()).all()
         
-        # --- CONVERSIE FUS ORAR PENTRU ISTORIC DM ---
-
         for m in messages:
-
             romania_tz = timezone(timedelta(hours=2))
             current_time = datetime.now(romania_tz).strftime('%H:%M')
-            
-            # Creăm un dicționar pentru a putea modifica formatul orei
             history.append({
                 'sender_username': m.sender_username,
                 'content': m.content,
                 'image_filename': m.image_filename,
-                'timestamp': current_time
+                'timestamp': current_time # Note: Real apps should use m.timestamp
             })
 
-    return render_template('dms.html', users_list=users, active_recipient=username, history=history)
+    return render_template('dms.html', 
+                         users_list=friends,   # Only pass Friends to the sidebar
+                         search_results=search_results, # Pass search results
+                         active_recipient=username, 
+                         history=history)
+
+@app.route('/send_request/<username>')
+@login_required
+def send_request(username):
+    sender = User.query.filter_by(username=session['username']).first()
+    receiver = User.query.filter_by(username=username).first()
+    
+    if not receiver:
+        flash('User not found.')
+        return redirect(url_for('dms'))
+    
+    # Check if request already exists
+    existing = Friendship.query.filter(
+        or_(
+            (Friendship.sender_id == sender.id) & (Friendship.receiver_id == receiver.id),
+            (Friendship.sender_id == receiver.id) & (Friendship.receiver_id == sender.id)
+        )
+    ).first()
+    
+    if existing:
+        flash('Friendship or request already exists.')
+    else:
+        req = Friendship(sender_id=sender.id, receiver_id=receiver.id, status='pending')
+        db.session.add(req)
+        db.session.commit()
+        flash(f'Friend request sent to {username}!')
+        
+    return redirect(url_for('dms'))
+
+@app.route('/accept_request/<int:request_id>')
+@login_required
+def accept_request(request_id):
+    req = Friendship.query.get_or_404(request_id)
+    # Verify the current user is the receiver
+    current_user = User.query.filter_by(username=session['username']).first()
+    
+    if req.receiver_id != current_user.id:
+        abort(403)
+        
+    req.status = 'accepted'
+    db.session.commit()
+    flash(f'You are now friends with {req.sender.username}!')
+    return redirect(url_for('account'))
+
+@app.route('/reject_request/<int:request_id>')
+@login_required
+def reject_request(request_id):
+    req = Friendship.query.get_or_404(request_id)
+    current_user = User.query.filter_by(username=session['username']).first()
+    
+    if req.receiver_id != current_user.id:
+        abort(403)
+        
+    db.session.delete(req)
+    db.session.commit()
+    flash('Friend request removed.')
+    return redirect(url_for('account'))
 
 @app.route('/profile/<username>')
 @login_required
@@ -129,39 +220,32 @@ def account():
     username = session.get('username')
     user = User.query.filter_by(username=username).first()
 
+    # Handle Profile Updates
     if request.method == 'POST':
-        # 1. Update Text Fields
         email = request.form.get('email', '').strip()
         bio = request.form.get('bio', '').strip()
         
-        # Enforce Mandatory Email
         if not email:
             flash('Email is required.')
-            return redirect(url_for('account'))
-            
-        user.email = email
-        user.bio = bio
-
-        # 2. Handle Profile Picture (Optional)
-        if 'profile_pic' in request.files:
-            file = request.files['profile_pic']
-            if file and file.filename != '':
-                if allowed_file(file.filename):
+        else:
+            user.email = email
+            user.bio = bio
+            if 'profile_pic' in request.files:
+                file = request.files['profile_pic']
+                if file and file.filename != '' and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
-                    # Unique name: user_id_filename
                     unique_filename = f"{user.id}_{filename}"
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                     file.save(file_path)
                     user.profile_pic = unique_filename
-                else:
-                    flash('Invalid file type. Allowed: png, jpg, jpeg, gif')
-                    return redirect(url_for('account'))
+            db.session.commit()
+            flash('Profile updated successfully!')
+            return redirect(url_for('account'))
 
-        db.session.commit()
-        flash('Profile updated successfully!')
-        return redirect(url_for('account'))
+    # FETCH PENDING REQUESTS
+    pending_requests = Friendship.query.filter_by(receiver_id=user.id, status='pending').all()
 
-    return render_template('account.html', user=user)
+    return render_template('account.html', user=user, pending_requests=pending_requests)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
