@@ -19,17 +19,28 @@
             <div id="dm-history" class="chat-messages">
                 {% for msg in history %}
                     <div class="msg-bubble {{ 'msg-sent' if msg.sender_username == session['username'] else 'msg-received' }}">
-                        <div class="msg-text">{{ msg.content }}</div>
+                        
+                        {% if msg.image_filename %}
+                            <img src="{{ url_for('static', filename='chat_uploads/' + msg.image_filename) }}" class="chat-image">
+                        {% endif %}
+                        
+                        {% if msg.content %}
+                            <div class="msg-text">{{ msg.content }}</div>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>
 
             <div class="chat-input-area">
+                <label for="dm-image-input" class="upload-btn">📷</label>
+                <input type="file" id="dm-image-input" accept="image/*" style="display: none;">
+
                 <textarea id="dm-input" placeholder="Message @{{ active_recipient }}..." rows="1"></textarea>
                 <button id="dm-send-btn">Send</button>
             </div>
         {% else %}
-            {% endif %}
+            <div class="empty-state">Select a user to start chatting</div>
+        {% endif %}
     </div>
 
     <div class="dm-sidebar">

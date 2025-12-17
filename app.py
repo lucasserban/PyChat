@@ -264,5 +264,56 @@ def handle_private_message(data):
         room = f"dm_{'-'.join(sorted([sender, recipient]))}"
         emit('receive_private_message', {'sender': sender, 'msg': msg}, room=room)
 
+@socketio.on('upload_private_image')
+def handle_private_image(data):
+    # Luăm expeditorul din sesiune pentru securitate, sau din data
+    sender = session.get('username') 
+    recipient = data.get('recipient')
+    file_data = data.get('image') # Base64 string
+    file_name = data.get('fileName')
+
+    if file_data and file_name and sender and recipient:
+        try:
+            # 1. Procesare string Base64 (eliminăm header-ul)
+            if "," in file_data:
+                header, encoded = file_data.split(",", 1)
+            else:
+                encoded = file_data
+                
+            data_bytes = base64.b64decode(encoded)
+            
+            # 2. Generare nume unic
+            safe_name = secure_filename(file_name)
+            unique_name = f"{int(datetime.utcnow().timestamp())}_{safe_name}"
+            file_path = os.path.join(app.config['CHAT_UPLOAD_FOLDER'], unique_name)
+            
+            # 3. Salvare pe disk
+            with open(file_path, "wb") as f:
+                f.write(data_bytes)
+                
+            # 4. Salvare în baza de date
+            # Important: setăm recipient_username pentru a fi un DM
+            new_msg = Message(
+                sender_username=sender, 
+                recipient_username=recipient,
+                content="", # Text gol
+                image_filename=unique_name
+            )
+            db.session.add(new_msg)
+            db.session.commit()
+            
+            # 5. Emitere către cameră (Room)
+            # Calculăm numele camerei exact ca la 'join_dm'
+            room = f"dm_{'-'.join(sorted([sender, recipient]))}"
+            
+            emit('receive_private_message', {
+                'sender': sender, 
+                'msg': "", 
+                'image': unique_name
+            }, room=room)
+            
+        except Exception as e:
+            print(f"Error saving private image: {e}")
+
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
