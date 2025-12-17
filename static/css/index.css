@@ -266,5 +266,5 @@ body {
 
 /* Ajustare culoare oră pentru mesajele primite (dacă fundalul e deschis) */
 .msg-received .msg-time {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(205, 200, 200, 0.629);
 }
