@@ -24,6 +24,8 @@
                 {% if msg.msg %}
                     <div class="msg-text">{{ msg.msg }}</div>
                 {% endif %}
+
+                <div class="msg-time">{{ msg.timestamp }}</div>
             </div>
         {% endfor %}
   </div>

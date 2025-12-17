@@ -108,13 +108,17 @@ body {
 /* --- Stiluri Noi pentru Bule --- */
 .msg-bubble {
     max-width: 70%;
-    padding: 10px 14px;
+    padding: 8px 12px; /* Padding puțin mai mic pentru aspect compact */
     border-radius: 16px;
     font-size: 1em;
     line-height: 1.4;
     position: relative;
     word-break: break-word;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+
+    /* Flexbox pentru layout vertical */
+    display: flex;
+    flex-direction: column;
 }
 
 .msg-sent {
@@ -247,4 +251,20 @@ body {
     border-radius: 8px;
     margin-bottom: 5px;
     cursor: pointer;
+}
+
+.msg-time {
+    align-self: flex-end; /* Împinge ora în dreapta */
+    font-size: 0.65em;    /* Font mic, ca în screenshot */
+    color: rgba(255, 255, 255, 0.7); /* Ușor transparent */
+    margin-top: 2px;      /* Spațiu mic față de text */
+    line-height: 1;       /* Înălțime rând compactă */
+    
+    /* Opțional: Ajustare fină pentru a fi mai aproape de colț */
+    margin-bottom: -2px;
+}
+
+/* Ajustare culoare oră pentru mesajele primite (dacă fundalul e deschis) */
+.msg-received .msg-time {
+    color: rgba(255, 255, 255, 0.7);
 }

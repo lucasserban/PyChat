@@ -32,7 +32,7 @@ function appendMessage(data) {
         div.appendChild(nameDiv);
     }
 
-    // 1. Dacă mesajul are imagine, o creăm
+    // 1. Imagine
     if (data.image) {
         const img = document.createElement('img');
         img.src = '/static/chat_uploads/' + data.image;
@@ -40,12 +40,20 @@ function appendMessage(data) {
         div.appendChild(img);
     }
 
-    // 2. Dacă mesajul are text, îl creăm
+    // 2. Text
     if (data.msg) {
         const textDiv = document.createElement('div');
         textDiv.className = 'msg-text';
         textDiv.innerText = data.msg;
         div.appendChild(textDiv);
+    }
+
+    // 3. ADĂUGAT: Ora (Timestamp)
+    if (data.timestamp) {
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'msg-time';
+        timeDiv.innerText = data.timestamp;
+        div.appendChild(timeDiv);
     }
     
     chatContainer.appendChild(div);
