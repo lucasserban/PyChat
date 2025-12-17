@@ -1,4 +1,5 @@
 import os
+import base64
 from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from flask_sqlalchemy import SQLAlchemy
@@ -15,11 +16,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- Upload Configuration ---
 UPLOAD_FOLDER = os.path.join('static', 'profile_pics')
+CHAT_UPLOAD_FOLDER = os.path.join('static', 'chat_uploads') # Folder nou pentru imagini chat
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# Ensure the upload directory exists
+app.config['CHAT_UPLOAD_FOLDER'] = CHAT_UPLOAD_FOLDER
+
+# Ensure the upload directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['CHAT_UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -41,7 +46,8 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_username = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
     recipient_username = db.Column(db.String(80), nullable=True)
-    content = db.Column(db.String(500), nullable=False)
+    content = db.Column(db.String(500), nullable=True) # Acum poate fi null dacă e doar imagine
+    image_filename = db.Column(db.String(200), nullable=True) # Coloană nouă pentru imagine
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 with app.app_context():
@@ -67,7 +73,13 @@ def index():
         .limit(50).all()
     messages = messages[::-1]
     
-    history = [{'username': m.sender_username, 'msg': m.content} for m in messages]
+    # Trimitem și numele imaginii în istoric
+    history = [{
+        'username': m.sender_username, 
+        'msg': m.content if m.content else "", 
+        'image': m.image_filename 
+    } for m in messages]
+    
     return render_template('index.html', username=session.get('username'), history=history)
 
 @app.route('/dms')
@@ -188,6 +200,50 @@ def handle_message(data):
         db.session.add(new_msg)
         db.session.commit()
         emit('receive_message', {'username': username, 'msg': msg}, room='global_chat')
+
+@socketio.on('upload_image')
+def handle_image(data):
+    username = data.get('username', 'Anonymous')
+    file_data = data.get('image') # Base64 string
+    file_name = data.get('fileName')
+    
+    if file_data and file_name:
+        try:
+            # Procesare string Base64 (eliminăm header-ul data:image/...)
+            if "," in file_data:
+                header, encoded = file_data.split(",", 1)
+            else:
+                encoded = file_data
+                
+            data_bytes = base64.b64decode(encoded)
+            
+            # Generare nume unic
+            safe_name = secure_filename(file_name)
+            unique_name = f"{int(datetime.utcnow().timestamp())}_{safe_name}"
+            file_path = os.path.join(app.config['CHAT_UPLOAD_FOLDER'], unique_name)
+            
+            # Salvare pe disk
+            with open(file_path, "wb") as f:
+                f.write(data_bytes)
+                
+            # Salvare în baza de date (mesaj gol, doar imagine)
+            new_msg = Message(
+                sender_username=username, 
+                content="", 
+                image_filename=unique_name
+            )
+            db.session.add(new_msg)
+            db.session.commit()
+            
+            # Emitere către clienți
+            emit('receive_message', {
+                'username': username, 
+                'msg': "", 
+                'image': unique_name
+            }, room='global_chat')
+            
+        except Exception as e:
+            print(f"Error saving image: {e}")
 
 @socketio.on('join_dm')
 def handle_join_dm(data):

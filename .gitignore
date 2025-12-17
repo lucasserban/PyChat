@@ -207,3 +207,4 @@ marimo/_lsp/
 __marimo__/
 
 static/profile_pics
+static/chat_uploads

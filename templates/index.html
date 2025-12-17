@@ -16,14 +16,27 @@
                         </a>
                     </div>
                 {% endif %}
-                <div class="msg-text">{{ msg.msg }}</div>
+                
+                {% if msg.image %}
+                    <img src="{{ url_for('static', filename='chat_uploads/' + msg.image) }}" class="chat-image">
+                {% endif %}
+                
+                {% if msg.msg %}
+                    <div class="msg-text">{{ msg.msg }}</div>
+                {% endif %}
             </div>
         {% endfor %}
-    </div>
-<div id="controls">
+  </div>
+
+  <div id="controls">
+    <label for="image-input" class="upload-btn">
+        📷
+    </label>
+    <input type="file" id="image-input" accept="image/*" style="display: none;">
+    
     <textarea id="message" placeholder="Type a message..." rows="1"></textarea>
     <button id="send">Send</button>
-  </div>
+</div>
   
   <script>
     window.currentUsername = "{{ username }}";

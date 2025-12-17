@@ -2,6 +2,7 @@ const socket = io();
 const chatContainer = document.getElementById('chat');
 const msgInput = document.getElementById('message');
 const sendBtn = document.getElementById('send');
+const imageInput = document.getElementById('image-input');
 
 // Scroll to bottom on load
 if(chatContainer) {
@@ -27,23 +28,30 @@ function appendMessage(data) {
         const link = document.createElement('a');
         link.href = `/profile/${data.username}`;
         link.innerText = data.username;
-        
         nameDiv.appendChild(link);
         div.appendChild(nameDiv);
     }
 
-    // MODIFICARE: Creăm un div separat pentru text
-    const textDiv = document.createElement('div');
-    textDiv.className = 'msg-text';
-    textDiv.innerText = data.msg; // Folosim innerText pentru a interpreta corect \n
-    
-    div.appendChild(textDiv);
+    // 1. Dacă mesajul are imagine, o creăm
+    if (data.image) {
+        const img = document.createElement('img');
+        img.src = '/static/chat_uploads/' + data.image;
+        img.className = 'chat-image';
+        div.appendChild(img);
+    }
+
+    // 2. Dacă mesajul are text, îl creăm
+    if (data.msg) {
+        const textDiv = document.createElement('div');
+        textDiv.className = 'msg-text';
+        textDiv.innerText = data.msg;
+        div.appendChild(textDiv);
+    }
     
     chatContainer.appendChild(div);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Listen for incoming global messages
 socket.on('receive_message', data => {
     appendMessage(data);
 });
@@ -69,20 +77,35 @@ function sendMessage() {
     });
     
     msgInput.value = '';
+    msgInput.style.height = '50px'; // Reset height if auto-expand was used
 }
 
-if (sendBtn && msgInput) {
-    sendBtn.addEventListener('click', sendMessage);
+// Send Image Logic (NOU)
+if (imageInput) {
+    imageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                // Trimitem imaginea ca base64
+                socket.emit('upload_image', {
+                    username: window.currentUsername,
+                    image: evt.target.result, // base64 string
+                    fileName: file.name
+                });
+            };
+            reader.readAsDataURL(file);
+            this.value = ''; // Reset input
+        }
+    });
+}
 
+if (sendBtn) {
+    sendBtn.addEventListener('click', sendMessage);
     msgInput.addEventListener('keydown', e => { 
-        // Dacă apeși Enter FĂRĂ Shift -> Trimite mesajul
         if(e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault(); 
-            sendMessage();
-            // Nu mai este nevoie să resetăm înălțimea, ea fiind fixă din CSS
+            sendMessage(); 
         }
-        // Shift+Enter va funcționa normal (rând nou + scroll)
     });
-
-    // AM ȘTERS evenimentul 'input' care modifica this.style.height
 }
