@@ -265,3 +265,12 @@ body {
   font-size: 1.15em;
   background: transparent;
 }
+
+.header-profile-link {
+    color: white;
+    text-decoration: underline;
+    font-weight: bold;
+}
+.header-profile-link:hover {
+    color: #ddd;
+}

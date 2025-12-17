@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-avatar">
+        {{ user.username[0].upper() }}
+    </div>
+    <h2>{{ user.username }}</h2>
+    
+    <div class="profile-details">
+        {% if user.email %}
+            <p><strong>Email:</strong> {{ user.email }}</p>
+        {% endif %}
+        
+        <p><strong>Bio:</strong> {{ user.bio if user.bio else "This user hasn't written a bio yet." }}</p>
+    </div>
+
+    <div class="profile-actions">
+        {% if session['username'] != user.username %}
+            <a href="{{ url_for('dms', username=user.username) }}" class="btn btn-dm">Message</a>
+        {% endif %}
+        <a href="javascript:history.back()" class="btn btn-back">Back</a>
+    </div>
+</div>
+{% endblock %}

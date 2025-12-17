@@ -8,7 +8,7 @@
         <input type="text" name="username" placeholder="Username" required autofocus value="{{ request.form.get('username', '') }}">
         <input type="password" name="password" placeholder="Password" required>
         <input type="email" name="email" placeholder="Email" required value="{{ request.form.get('email', '') }}">
-    <button type="submit">Register</button>
+        <button type="submit">Register</button>
     </form>
     <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a>.</p>
     {% with messages = get_flashed_messages() %}
@@ -24,14 +24,5 @@
 {% endblock %}
 
 {% block script %}
-    <script>
-document.addEventListener('DOMContentLoaded', () => {
-  // remove top navigation links with these labels
-  const removeLabels = ['pychat', 'my account', 'direct messages', 'logout', 'global chat'];
-  document.querySelectorAll('a').forEach(a => {
-    const txt = a.textContent && a.textContent.trim().toLowerCase();
-    if (txt && removeLabels.includes(txt)) a.remove();
-  });
-});
-</script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}

@@ -9,7 +9,10 @@
   <div id="chat">
     {% for msg in history %}
         <div class="msg">
-            <strong>{{ msg.username }}:</strong> {{ msg.msg }}
+            <a href="{{ url_for('profile', username=msg.username) }}" class="username-link">
+                <strong>{{ msg.username }}:</strong>
+            </a> 
+            {{ msg.msg }}
         </div>
     {% endfor %}
   </div>
@@ -17,6 +20,7 @@
     <input id="message" type="text" placeholder="Type a message..." autocomplete="off" />
     <button id="send">Send</button>
   </div>
+  
   <script>
     window.currentUsername = "{{ username }}";
   </script>

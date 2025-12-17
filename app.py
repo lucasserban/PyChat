@@ -1,23 +1,21 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_  # <--- Added this import for complex queries
+from sqlalchemy import or_
 from datetime import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'BestProjectOfAllTime'
-# SQLite database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize ORM and SocketIO
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
-# --- ORM Models (Database Layer) ---
+# --- Models ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -28,15 +26,14 @@ class User(db.Model):
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_username = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
-    recipient_username = db.Column(db.String(80), nullable=True) # Null = Public message
+    recipient_username = db.Column(db.String(80), nullable=True)
     content = db.Column(db.String(500), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Create tables if they don't exist
 with app.app_context():
     db.create_all()
 
-# --- Helper Functions ---
+# --- Helpers ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -45,24 +42,20 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- HTTP Routes ---
+# --- Routes ---
 
 @app.route('/')
 @login_required
 def index():
-    # 1. Get the NEWEST 50 messages (Desc)
+    # Global Chat History
     messages = Message.query.filter_by(recipient_username=None)\
         .order_by(Message.timestamp.desc())\
-        .limit(50)\
-        .all()
-    
-    # 2. Reverse them so they display chronologically (Oldest at top, Newest at bottom)
+        .limit(50).all()
     messages = messages[::-1]
     
     history = [{'username': m.sender_username, 'msg': m.content} for m in messages]
     return render_template('index.html', username=session.get('username'), history=history)
 
-# --- NEW: Direct Messages Route ---
 @app.route('/dms')
 @app.route('/dms/<username>')
 @login_required
@@ -72,26 +65,42 @@ def dms(username=None):
     history = []
     
     if username:
-        # Fetch conversation history between current_user and selected username
-        # We need messages where:
-        # (Sender is Me AND Recipient is Them) OR (Sender is Them AND Recipient is Me)
         messages = Message.query.filter(
             or_(
                 (Message.sender_username == current_user) & (Message.recipient_username == username),
                 (Message.sender_username == username) & (Message.recipient_username == current_user)
             )
         ).order_by(Message.timestamp.asc()).all()
-        
         history = messages
 
     return render_template('dms.html', users_list=users, active_recipient=username, history=history)
+
+# --- NEW: Profile Route ---
+@app.route('/profile/<username>')
+@login_required
+def profile(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    return render_template('profile.html', user=user)
+
+@app.route('/myAccount', methods=['GET', 'POST'])
+@login_required
+def account():
+    username = session.get('username')
+    user = User.query.filter_by(username=username).first()
+
+    if request.method == 'POST':
+        user.email = request.form.get('email', '').strip()
+        user.bio = request.form.get('bio', '').strip()
+        db.session.commit()
+        flash('Profile updated successfully!')
+
+    return render_template('myAccount.html', user=user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        
         user = User.query.filter_by(username=username).first()
         
         if user and check_password_hash(user.password, password):
@@ -118,34 +127,12 @@ def register():
             return redirect(url_for('login'))
     return render_template('register.html')
 
-@app.route('/myAccount', methods=['GET', 'POST'])
-@login_required
-def account():
-    username = session.get('username')
-    user = User.query.filter_by(username=username).first()
-
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        bio = request.form.get('bio', '').strip()
-        
-        user.email = email
-        user.bio = bio
-        db.session.commit()
-        flash('Profile updated successfully!')
-
-    return render_template('myAccount.html', user=user)
-
 @app.route('/logout')
 def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
 
-# --- SocketIO Events ---
-
-@socketio.on('connect')
-def on_connect():
-    print('Client connected:', request.sid)
-
+# --- SocketIO ---
 @socketio.on('join')
 def handle_join(data):
     username = data.get('username', 'Anonymous')
@@ -155,45 +142,31 @@ def handle_join(data):
 @socketio.on('send_message')
 def handle_message(data):
     username = data.get('username', 'Anonymous')
-    msg_content = data.get('msg', '')
-    
-    if msg_content:
-        # Save to Database
-        new_msg = Message(sender_username=username, content=msg_content)
+    msg = data.get('msg', '')
+    if msg:
+        new_msg = Message(sender_username=username, content=msg)
         db.session.add(new_msg)
         db.session.commit()
-        
-        # Emit to global chat
-        emit('receive_message', {'username': username, 'msg': msg_content}, room='global_chat')
-
-# --- NEW: Private Message Events ---
+        emit('receive_message', {'username': username, 'msg': msg}, room='global_chat')
 
 @socketio.on('join_dm')
 def handle_join_dm(data):
     username = data.get('username')
     recipient = data.get('recipient')
-    
-    # Create a unique room name for this pair of users
-    # Sorting ensures 'userA-userB' is the same room as 'userB-userA'
     room = f"dm_{'-'.join(sorted([username, recipient]))}"
     join_room(room)
-    print(f"{username} joined DM room: {room}")
 
 @socketio.on('send_private_message')
 def handle_private_message(data):
     sender = session.get('username')
     recipient = data.get('recipient')
-    msg_content = data.get('msg')
-    
-    if msg_content and recipient:
-        # 1. Save to Database
-        new_msg = Message(sender_username=sender, recipient_username=recipient, content=msg_content)
+    msg = data.get('msg')
+    if msg and recipient:
+        new_msg = Message(sender_username=sender, recipient_username=recipient, content=msg)
         db.session.add(new_msg)
         db.session.commit()
-        
-        # 2. Emit to the specific DM room
         room = f"dm_{'-'.join(sorted([sender, recipient]))}"
-        emit('receive_private_message', {'sender': sender, 'msg': msg_content}, room=room)
+        emit('receive_private_message', {'sender': sender, 'msg': msg}, room=room)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

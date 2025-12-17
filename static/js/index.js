@@ -1,9 +1,8 @@
-// filepath: [index.js](http://_vscodecontentref_/1)
 const socket = io();
 const chat = document.getElementById('chat');
 const sendBtn = document.getElementById('send');
 const msgInput = document.getElementById('message');
-const username = window.currentUsername; // Get username from Flask
+const username = window.currentUsername;
 
 function appendMessage(html, cls='msg'){
     const d = document.createElement('div');
@@ -11,6 +10,11 @@ function appendMessage(html, cls='msg'){
     d.innerHTML = html;
     chat.appendChild(d);
     chat.scrollTop = chat.scrollHeight;
+}
+
+// Simple escape
+function escapeHtml(s) { 
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 socket.on('connect', () => {
@@ -29,11 +33,11 @@ socket.on('system_message', data => {
 socket.on('receive_message', data => {
     const name = escapeHtml(data.username || 'Anonymous');
     const text = escapeHtml(data.msg || '');
-    appendMessage(`<strong>${name}:</strong> ${text}`);
+    
+    // Create clickable profile link
+    const link = `<a href="/profile/${name}" class="username-link"><strong>${name}:</strong></a>`;
+    appendMessage(`${link} ${text}`);
 });
-
-sendBtn.addEventListener('click', sendMessage);
-msgInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendMessage(); });
 
 function sendMessage(){
     const msg = msgInput.value.trim();
@@ -42,7 +46,5 @@ function sendMessage(){
     msgInput.value = '';
 }
 
-// Simple escape
-function escapeHtml(s) { 
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendMessage(); });

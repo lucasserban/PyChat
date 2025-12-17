@@ -10,7 +10,10 @@
     <div class="dm-chat-area">
         {% if active_recipient %}
             <div class="chat-header">
-                Chatting with @{{ active_recipient }}
+                Chatting with 
+                <a href="{{ url_for('profile', username=active_recipient) }}" class="header-profile-link">
+                    @{{ active_recipient }}
+                </a>
             </div>
             
             <div id="dm-history" class="chat-messages">
