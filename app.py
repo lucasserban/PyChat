@@ -8,6 +8,7 @@ from datetime import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from datetime import timezone, timedelta
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'BestProjectOfAllTime'
@@ -73,11 +74,12 @@ def index():
         .limit(50).all()
     messages = messages[::-1]
     
-    # Trimitem și numele imaginii în istoric
+    # ADĂUGAT: 'timestamp': m.timestamp.strftime('%H:%M')
     history = [{
         'username': m.sender_username, 
         'msg': m.content if m.content else "", 
-        'image': m.image_filename 
+        'image': m.image_filename,
+        'timestamp': m.timestamp.strftime('%H:%M') 
     } for m in messages]
     
     return render_template('index.html', username=session.get('username'), history=history)
@@ -234,7 +236,16 @@ def handle_message(data):
         new_msg = Message(sender_username=username, content=msg)
         db.session.add(new_msg)
         db.session.commit()
-        emit('receive_message', {'username': username, 'msg': msg}, room='global_chat')
+        
+        # ADĂUGAT: timestamp calculat acum
+        romania_tz = timezone(timedelta(hours=2))
+        current_time = datetime.now(romania_tz).strftime('%H:%M')
+        
+        emit('receive_message', {
+            'username': username, 
+            'msg': msg,
+            'timestamp': current_time 
+        }, room='global_chat')
 
 @socketio.on('upload_image')
 def handle_image(data):
@@ -246,7 +257,7 @@ def handle_image(data):
         try:
             # Procesare string Base64 (eliminăm header-ul data:image/...)
             if "," in file_data:
-                header, encoded = file_data.split(",", 1)
+                _, encoded = file_data.split(",", 1)
             else:
                 encoded = file_data
                 
@@ -254,7 +265,7 @@ def handle_image(data):
             
             # Generare nume unic
             safe_name = secure_filename(file_name)
-            unique_name = f"{int(datetime.utcnow().timestamp())}_{safe_name}"
+            unique_name = f"{int(datetime.now(timezone.utc).timestamp())}_{safe_name}"
             file_path = os.path.join(app.config['CHAT_UPLOAD_FOLDER'], unique_name)
             
             # Salvare pe disk
@@ -270,11 +281,15 @@ def handle_image(data):
             db.session.add(new_msg)
             db.session.commit()
             
+            romania_tz = timezone(timedelta(hours=2))
+            current_time = datetime.now(romania_tz).strftime('%H:%M')
+
             # Emitere către clienți
             emit('receive_message', {
                 'username': username, 
                 'msg': "", 
-                'image': unique_name
+                'image': unique_name,
+                'timestamp': current_time
             }, room='global_chat')
             
         except Exception as e:
