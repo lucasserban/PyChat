@@ -9,7 +9,6 @@
     <div id="chat">
         {% for msg in history %}
             <div class="msg-bubble {{ 'msg-sent' if msg.username == username else 'msg-received' }}">
-                {# Afișăm numele doar dacă mesajul este de la altcineva #}
                 {% if msg.username != username %}
                     <div class="sender-name">
                         <a href="{{ url_for('profile', username=msg.username) }}">
@@ -17,12 +16,12 @@
                         </a>
                     </div>
                 {% endif %}
-                {{ msg.msg }}
+                <div class="msg-text">{{ msg.msg }}</div>
             </div>
-    {% endfor %}
-  </div>
-  <div id="controls">
-    <input id="message" type="text" placeholder="Type a message..." autocomplete="off" />
+        {% endfor %}
+    </div>
+<div id="controls">
+    <textarea id="message" placeholder="Type a message..." rows="1"></textarea>
     <button id="send">Send</button>
   </div>
   

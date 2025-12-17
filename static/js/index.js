@@ -15,14 +15,11 @@ socket.on('connect', () => {
 function appendMessage(data) {
     if (!chatContainer) return;
     
-    // Verificăm dacă mesajul este al meu
     const isMe = data.username === window.currentUsername;
     
     const div = document.createElement('div');
-    // Setăm clasa pentru aliniere (dreapta pt mine, stânga pt alții)
     div.className = isMe ? 'msg-bubble msg-sent' : 'msg-bubble msg-received';
     
-    // Dacă mesajul este de la altcineva, adăugăm numele deasupra textului
     if (!isMe) {
         const nameDiv = document.createElement('div');
         nameDiv.className = 'sender-name';
@@ -35,8 +32,12 @@ function appendMessage(data) {
         div.appendChild(nameDiv);
     }
 
-    // Adăugăm textul mesajului
-    div.appendChild(document.createTextNode(data.msg));
+    // MODIFICARE: Creăm un div separat pentru text
+    const textDiv = document.createElement('div');
+    textDiv.className = 'msg-text';
+    textDiv.innerText = data.msg; // Folosim innerText pentru a interpreta corect \n
+    
+    div.appendChild(textDiv);
     
     chatContainer.appendChild(div);
     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -70,9 +71,18 @@ function sendMessage() {
     msgInput.value = '';
 }
 
-if (sendBtn) {
+if (sendBtn && msgInput) {
     sendBtn.addEventListener('click', sendMessage);
+
     msgInput.addEventListener('keydown', e => { 
-        if(e.key === 'Enter') sendMessage(); 
+        // Dacă apeși Enter FĂRĂ Shift -> Trimite mesajul
+        if(e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); 
+            sendMessage();
+            // Nu mai este nevoie să resetăm înălțimea, ea fiind fixă din CSS
+        }
+        // Shift+Enter va funcționa normal (rând nou + scroll)
     });
+
+    // AM ȘTERS evenimentul 'input' care modifica this.style.height
 }
