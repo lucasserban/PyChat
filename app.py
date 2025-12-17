@@ -163,21 +163,56 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # 1. Preluăm datele din formular
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         email = request.form.get('email', '').strip()
+        bio = request.form.get('bio', '').strip()
 
+        # Validări de bază
         if not username or not password or not email:
-            flash('All fields are mandatory.')
+            flash('All fields (Username, Password, Email) are mandatory.')
         elif User.query.filter_by(username=username).first():
             flash('Username already exists')
         else:
+            # 2. Procesăm imaginea de profil (dacă există)
+            profile_pic_filename = None
+            if 'profile_pic' in request.files:
+                file = request.files['profile_pic']
+                if file and file.filename != '':
+                    if allowed_file(file.filename):
+                        filename = secure_filename(file.filename)
+                        # Generăm un nume unic folosind username-ul și timestamp-ul
+                        # (Nu avem încă user.id, deci folosim username care e unic)
+                        unique_filename = f"{username}_{int(datetime.utcnow().timestamp())}_{filename}"
+                        
+                        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                        try:
+                            file.save(file_path)
+                            profile_pic_filename = unique_filename
+                        except Exception as e:
+                            print(f"Error saving profile pic: {e}")
+                    else:
+                        flash('Invalid file type. Allowed: png, jpg, jpeg, gif')
+                        # Dacă fișierul nu e bun, poți decide să oprești înregistrarea sau să continui fără poză.
+                        # Aici alegem să continuăm fără poză sau să dăm return (opțional).
+            
+            # 3. Creăm utilizatorul cu toate datele
             pw_hash = generate_password_hash(password)
-            new_user = User(username=username, password=pw_hash, email=email)
+            new_user = User(
+                username=username, 
+                password=pw_hash, 
+                email=email,
+                bio=bio,                      # Adăugăm Bio
+                profile_pic=profile_pic_filename # Adăugăm Imaginea
+            )
+            
             db.session.add(new_user)
             db.session.commit()
+            
             flash('Registration successful. Please log in.')
             return redirect(url_for('login'))
+            
     return render_template('register.html')
 
 @app.route('/logout')
