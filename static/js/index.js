@@ -15,20 +15,27 @@ socket.on('connect', () => {
 function appendMessage(data) {
     if (!chatContainer) return;
     
+    // Verificăm dacă mesajul este al meu
+    const isMe = data.username === window.currentUsername;
+    
     const div = document.createElement('div');
-    div.className = 'msg';
+    // Setăm clasa pentru aliniere (dreapta pt mine, stânga pt alții)
+    div.className = isMe ? 'msg-bubble msg-sent' : 'msg-bubble msg-received';
     
-    // Create the username link
-    const strong = document.createElement('strong');
-    strong.innerText = data.username + ': ';
-    
-    // Create the link wrapper (to keep consistent with your HTML)
-    const link = document.createElement('a');
-    link.href = `/profile/${data.username}`;
-    link.className = 'username-link';
-    link.appendChild(strong);
+    // Dacă mesajul este de la altcineva, adăugăm numele deasupra textului
+    if (!isMe) {
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'sender-name';
+        
+        const link = document.createElement('a');
+        link.href = `/profile/${data.username}`;
+        link.innerText = data.username;
+        
+        nameDiv.appendChild(link);
+        div.appendChild(nameDiv);
+    }
 
-    div.appendChild(link);
+    // Adăugăm textul mesajului
     div.appendChild(document.createTextNode(data.msg));
     
     chatContainer.appendChild(div);
