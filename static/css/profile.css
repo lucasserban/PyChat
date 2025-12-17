@@ -35,18 +35,35 @@ body {
     text-align: center;
 }
 
+/* Wrapper to center the image or div */
+.profile-avatar-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+/* Style for the uploaded image */
+.profile-avatar-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255,255,255,0.1);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+/* Style for the text fallback */
 .profile-avatar {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 40px;
+    font-size: 48px;
     font-weight: bold;
-    margin: 0 auto 1.5rem;
     box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
 }
 
@@ -150,20 +167,4 @@ body {
 .logout-link:hover {
     background: rgba(239, 68, 68, 0.12);
     color: #ffcccc;
-}
-
-#controls button {
-    padding:10px 12px;
-    border-radius:10px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
-    color:#fff;
-    font-weight:600;
-    cursor:pointer;
-    transition: transform 120ms ease, filter 160ms ease;
-}
-
-#controls button:hover { 
-    transform: translateY(-1px);
-    filter: brightness(1.05);
 }

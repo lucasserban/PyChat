@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}" />
+{% endblock %}
+
+{% block content %}
+    <div class="account-container">
+        
+        <form method="POST" enctype="multipart/form-data" class="account-form">
+
+            <div class="profile-header">
+                <div class="profile-avatar-wrapper">
+                    <label for="profile_pic_input" class="avatar-label">
+                        
+                        <div id="avatar-display-area">
+                            {% if user.profile_pic %}
+                                <img src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}" alt="Avatar" class="profile-avatar-img" id="avatar-preview">
+                            {% else %}
+                                <div class="profile-avatar" id="avatar-placeholder">
+                                    {{ user.username[0].upper() }}
+                                </div>
+                                <img src="" alt="Preview" class="profile-avatar-img" id="avatar-preview-hidden" style="display:none;">
+                            {% endif %}
+                        </div>
+
+                        <div class="avatar-overlay">
+                            <span class="plus-icon">+</span>
+                        </div>
+                    </label>
+                </div>
+                <h2>{{ user.username }}</h2>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+            {% endwith %}
+
+            <input type="file" id="profile_pic_input" name="profile_pic" accept=".png, .jpg, .jpeg, .gif" style="display: none;">
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" value="{{ user.email or '' }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Bio</label>
+                <textarea name="bio" rows="3">{{ user.bio or '' }}</textarea>
+            </div>
+            
+            <button type="submit" class="save-btn">Save Changes</button>
+        </form>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script src="{{ url_for('static', filename='js/account.js') }}"></script>
+{% endblock %}

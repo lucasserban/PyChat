@@ -6,11 +6,24 @@ from sqlalchemy import or_
 from datetime import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'BestProjectOfAllTime'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# --- Upload Configuration ---
+UPLOAD_FOLDER = os.path.join('static', 'profile_pics')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Ensure the upload directory exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -20,8 +33,9 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False) 
-    email = db.Column(db.String(120), nullable=True)
+    email = db.Column(db.String(120), nullable=False) # Mandatory
     bio = db.Column(db.String(200), nullable=True) 
+    profile_pic = db.Column(db.String(150), nullable=True) # Optional
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -75,26 +89,51 @@ def dms(username=None):
 
     return render_template('dms.html', users_list=users, active_recipient=username, history=history)
 
-# --- NEW: Profile Route ---
 @app.route('/profile/<username>')
 @login_required
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     return render_template('profile.html', user=user)
 
-@app.route('/myAccount', methods=['GET', 'POST'])
+@app.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
     username = session.get('username')
     user = User.query.filter_by(username=username).first()
 
     if request.method == 'POST':
-        user.email = request.form.get('email', '').strip()
-        user.bio = request.form.get('bio', '').strip()
+        # 1. Update Text Fields
+        email = request.form.get('email', '').strip()
+        bio = request.form.get('bio', '').strip()
+        
+        # Enforce Mandatory Email
+        if not email:
+            flash('Email is required.')
+            return redirect(url_for('account'))
+            
+        user.email = email
+        user.bio = bio
+
+        # 2. Handle Profile Picture (Optional)
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            if file and file.filename != '':
+                if allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # Unique name: user_id_filename
+                    unique_filename = f"{user.id}_{filename}"
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                    file.save(file_path)
+                    user.profile_pic = unique_filename
+                else:
+                    flash('Invalid file type. Allowed: png, jpg, jpeg, gif')
+                    return redirect(url_for('account'))
+
         db.session.commit()
         flash('Profile updated successfully!')
+        return redirect(url_for('account'))
 
-    return render_template('myAccount.html', user=user)
+    return render_template('account.html', user=user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -116,7 +155,9 @@ def register():
         password = request.form.get('password', '')
         email = request.form.get('email', '').strip()
 
-        if User.query.filter_by(username=username).first():
+        if not username or not password or not email:
+            flash('All fields are mandatory.')
+        elif User.query.filter_by(username=username).first():
             flash('Username already exists')
         else:
             pw_hash = generate_password_hash(password)
@@ -136,9 +177,8 @@ def logout():
 @socketio.on('join')
 def handle_join(data):
     username = data.get('username', 'Anonymous')
-    join_room('global_chat') 
-    emit('system_message', {'msg': f'{username} joined the chat.'}, room='global_chat')
-
+    join_room('global_chat')
+    
 @socketio.on('send_message')
 def handle_message(data):
     username = data.get('username', 'Anonymous')

@@ -6,9 +6,16 @@
 
 {% block content %}
 <div class="profile-container">
-    <div class="profile-avatar">
-        {{ user.username[0].upper() }}
+    <div class="profile-avatar-wrapper">
+        {% if user.profile_pic %}
+            <img src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}" alt="{{ user.username }}" class="profile-avatar-img">
+        {% else %}
+            <div class="profile-avatar">
+                {{ user.username[0].upper() }}
+            </div>
+        {% endif %}
     </div>
+
     <h2>{{ user.username }}</h2>
     
     <div class="profile-details">
@@ -22,6 +29,8 @@
     <div class="profile-actions">
         {% if session['username'] != user.username %}
             <a href="{{ url_for('dms', username=user.username) }}" class="btn btn-dm">Message</a>
+        {% else %}
+             <a href="{{ url_for('account') }}" class="btn btn-dm">Edit</a>
         {% endif %}
         <a href="javascript:history.back()" class="btn btn-back">Back</a>
     </div>

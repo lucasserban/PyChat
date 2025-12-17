@@ -1,50 +1,71 @@
 const socket = io();
-const chat = document.getElementById('chat');
-const sendBtn = document.getElementById('send');
+const chatContainer = document.getElementById('chat');
 const msgInput = document.getElementById('message');
-const username = window.currentUsername;
+const sendBtn = document.getElementById('send');
 
-function appendMessage(html, cls='msg'){
-    const d = document.createElement('div');
-    d.className = cls;
-    d.innerHTML = html;
-    chat.appendChild(d);
-    chat.scrollTop = chat.scrollHeight;
-}
-
-// Simple escape
-function escapeHtml(s) { 
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// Scroll to bottom on load
+if(chatContainer) {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 socket.on('connect', () => {
-    // appendMessage('Connected to server.', 'sys');
-    socket.emit('join', { username });
+    socket.emit('join', { username: window.currentUsername });
 });
 
-socket.on('disconnect', () => {
-    // appendMessage('Disconnected from server.', 'sys');
+function appendMessage(data) {
+    if (!chatContainer) return;
+    
+    const div = document.createElement('div');
+    div.className = 'msg';
+    
+    // Create the username link
+    const strong = document.createElement('strong');
+    strong.innerText = data.username + ': ';
+    
+    // Create the link wrapper (to keep consistent with your HTML)
+    const link = document.createElement('a');
+    link.href = `/profile/${data.username}`;
+    link.className = 'username-link';
+    link.appendChild(strong);
+
+    div.appendChild(link);
+    div.appendChild(document.createTextNode(data.msg));
+    
+    chatContainer.appendChild(div);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Listen for incoming global messages
+socket.on('receive_message', data => {
+    appendMessage(data);
 });
 
 socket.on('system_message', data => {
-    // appendMessage(escapeHtml(data.msg), 'sys');
+    if (!chatContainer) return;
+    const div = document.createElement('div');
+    div.className = 'msg sys';
+    div.innerText = data.msg;
+    chatContainer.appendChild(div);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 
-socket.on('receive_message', data => {
-    const name = escapeHtml(data.username || 'Anonymous');
-    const text = escapeHtml(data.msg || '');
-    
-    // Create clickable profile link
-    const link = `<a href="/profile/${name}" class="username-link"><strong>${name}:</strong></a>`;
-    appendMessage(`${link} ${text}`);
-});
-
-function sendMessage(){
+// Send Logic
+function sendMessage() {
+    if (!msgInput) return;
     const msg = msgInput.value.trim();
-    if(!msg) return;
-    socket.emit('send_message', { username, msg });
+    if (!msg) return;
+
+    socket.emit('send_message', {
+        username: window.currentUsername,
+        msg: msg
+    });
+    
     msgInput.value = '';
 }
 
-sendBtn.addEventListener('click', sendMessage);
-msgInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendMessage(); });
+if (sendBtn) {
+    sendBtn.addEventListener('click', sendMessage);
+    msgInput.addEventListener('keydown', e => { 
+        if(e.key === 'Enter') sendMessage(); 
+    });
+}
