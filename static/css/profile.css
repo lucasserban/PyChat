@@ -104,3 +104,66 @@ body {
 .btn-back:hover {
     background: rgba(255, 255, 255, 0.15);
 }
+
+.site-header {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+}
+
+.brand {
+    font-weight: 700;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.nav-right {
+    display: flex;
+    gap: 12px;
+}
+
+.nav-link {
+    color: var(--text);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.nav-link:hover {
+    background: rgba(255,255,255,0.06);
+    color: #ffffff;
+}
+
+.logout-link {
+    color: #fecaca;
+}
+
+.logout-link:hover {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ffcccc;
+}
+
+#controls button {
+    padding:10px 12px;
+    border-radius:10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    transition: transform 120ms ease, filter 160ms ease;
+}
+
+#controls button:hover { 
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
