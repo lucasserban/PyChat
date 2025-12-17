@@ -145,3 +145,9 @@ input[type="text"]:focus {
   transform: translateY(-1px);
   filter: brightness(1.05);
 }
+
+.username-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
