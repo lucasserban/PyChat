@@ -27,7 +27,13 @@ function appendMessage(text, isSentByMe) {
     
     const div = document.createElement('div');
     div.className = isSentByMe ? 'msg-bubble msg-sent' : 'msg-bubble msg-received';
-    div.innerHTML = escapeHtml(text);
+    
+    // MODIFICARE: Creăm div-ul wrapper pentru text
+    const textDiv = document.createElement('div');
+    textDiv.className = 'msg-text';
+    textDiv.innerText = text; // innerText interpretează corect \n și face escape automat la HTML
+    
+    div.appendChild(textDiv);
     chatContainer.appendChild(div);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
@@ -61,7 +67,13 @@ function sendMessage() {
 
 if (sendBtn) {
     sendBtn.addEventListener('click', sendMessage);
+    
     msgInput.addEventListener('keydown', e => { 
-        if(e.key === 'Enter') sendMessage(); 
+        // Dacă apeși Enter FĂRĂ Shift -> Trimite
+        if(e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); 
+            sendMessage(); 
+        }
+        // Shift+Enter merge standard (linie nouă)
     });
 }
