@@ -9,8 +9,7 @@ if(chatContainer) {
 }
 
 socket.on('connect', () => {
-    // We join a specific room for this DM based on the recipient
-    // Variables currentUser and activeRecipient are defined in dms.html
+    // Join the DM room
     if (window.activeRecipient) {
         socket.emit('join_dm', { 
             recipient: window.activeRecipient,
@@ -19,7 +18,6 @@ socket.on('connect', () => {
     }
 });
 
-// Helper to escape HTML to prevent XSS
 function escapeHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -55,8 +53,9 @@ function sendMessage() {
         msg: msg
     });
 
-    // Optimistically append to UI immediately
-    appendMessage(msg, true);
+    // BUG FIX: Removed optimistic appendMessage() here.
+    // We now wait for 'receive_private_message' to update the UI.
+    
     msgInput.value = '';
 }
 
