@@ -153,13 +153,33 @@ def dms(username=None):
         ).order_by(Message.timestamp.asc()).all()
         
         for m in messages:
+            # --- LOGICĂ ADĂUGATĂ PENTRU REACȚII ---
+            reactions = MessageReaction.query.filter_by(message_id=m.id).all()
+            reactions_map = {}
+            for r in reactions:
+                if r.emoji not in reactions_map:
+                    reactions_map[r.emoji] = {'count': 0, 'users': []}
+                reactions_map[r.emoji]['count'] += 1
+                reactions_map[r.emoji]['users'].append(r.user_username)
+            
+            reactions_list = []
+            for emoji, data in reactions_map.items():
+                reactions_list.append({
+                    'emoji': emoji,
+                    'count': data['count'],
+                    'user_has_reacted': current_username in data['users']
+                })
+            # ---------------------------------------
+
             romania_tz = timezone(timedelta(hours=2))
             current_time = datetime.now(romania_tz).strftime('%H:%M')
             history.append({
+                'id': m.id,  # IMPORTANT: Avem nevoie de ID
                 'sender_username': m.sender_username,
                 'content': m.content,
                 'image_filename': m.image_filename,
-                'timestamp': current_time
+                'timestamp': current_time,
+                'reactions': reactions_list # Trimitem reacțiile
             })
 
     return render_template('dms.html', 
@@ -495,15 +515,17 @@ def handle_reaction(data):
     msg_id = data.get('message_id')
     emoji = data.get('emoji')
 
-    # FIX: Ensure msg_id is an integer (handles cases where JS sends "1" as a string)
     try:
         msg_id = int(msg_id)
     except (TypeError, ValueError):
-        print(f"Error: Invalid message_id received: {msg_id}")
         return
     
     if not username or not msg_id or not emoji:
-        print(f"Missing data: User={username}, Msg={msg_id}, Emoji={emoji}")
+        return
+
+    # 1. Găsim mesajul pentru a vedea dacă e DM sau Global
+    message = Message.query.get(msg_id)
+    if not message:
         return
 
     existing = MessageReaction.query.filter_by(message_id=msg_id, user_username=username, emoji=emoji).first()
@@ -516,6 +538,7 @@ def handle_reaction(data):
     
     db.session.commit()
     
+    # Recalculăm reacțiile
     all_reactions = MessageReaction.query.filter_by(message_id=msg_id).all()
     
     reactions_map = {}
@@ -533,10 +556,21 @@ def handle_reaction(data):
             'users': r_data['users']
         })
         
-    emit('update_message_reactions', {
+    response_data = {
         'message_id': msg_id,
         'reactions': reactions_list
-    }, room='global_chat')
+    }
+
+    # 2. Trimitem evenimentul în camera corectă
+    if message.recipient_username:
+        # Este un mesaj privat (DM)
+        # Reconstruim numele camerei DM: dm_user1-user2 (sortat alfabetic)
+        participants = sorted([message.sender_username, message.recipient_username])
+        room_name = f"dm_{'-'.join(participants)}"
+        emit('update_message_reactions', response_data, room=room_name)
+    else:
+        # Este mesaj global
+        emit('update_message_reactions', response_data, room='global_chat')
 
 # --- MAIN ENTRY POINT (Must be at the very END) ---
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-/* Use the same variables as index.css */
+/* --- Variabile și Configurații Generale --- */
 :root {
     --bg: #0f172a;
     --panel: #111827;
@@ -25,6 +25,7 @@ body {
     height: 100%;
 }
 
+/* ... (Stiluri header/nav existente rămân la fel) ... */
 .site-header {
     position: sticky;
     top: 0;
@@ -33,75 +34,14 @@ body {
     border-radius: var(--radius);
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
+.nav { padding: 0.75rem 0; display:flex; justify-content:space-between; align-items:center;}
+.nav-right { display:flex; gap:12px; }
+.nav-link { color:var(--text); text-decoration:none; padding:6px 10px; border-radius:8px; transition:0.1s;}
+.nav-link:hover { background:rgba(255,255,255,0.06); color:#fff; }
+.logout-link { color:#fecaca; }
+.brand { font-weight:700; color:#fff; text-decoration:none;}
 
-.site-header:hover {
-    box-shadow: 0 8px 32px 0 rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.2);
-    border-color: rgba(59, 130, 246, 0.3);
-}
-
-.nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 0;
-}
-
-.nav-right {
-    display: flex;
-    gap: 12px;
-}
-
-.nav-link {
-    color: var(--text);
-    text-decoration: none;
-    padding: 6px 10px;
-    border-radius: 8px;
-    transition: background 120ms ease, color 120ms ease;
-}
-
-.nav-link:hover {
-    background: rgba(255,255,255,0.06);
-    color: #ffffff;
-}
-
-.logout-link {
-    color: #fecaca;
-}
-
-.brand {
-    font-weight: 700;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 8px;
-    transition: background 120ms ease, color 120ms ease;
-}
-
-.brand:hover {
-    background: rgba(255,255,255,0.06);
-    color: #fff;
-}
-
-.logout-link:hover {
-    background: rgba(239, 68, 68, 0.12);
-    color: #ffcccc;
-}
-
-#controls button {
-    padding:10px 12px;
-    border-radius:10px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
-    color:#fff;
-    font-weight:600;
-    cursor:pointer;
-    transition: transform 120ms ease, filter 160ms ease;
-}
-
-#controls button:hover { 
-    transform: translateY(-1px);
-    filter: brightness(1.05);
-}
-
+/* --- DM Container --- */
 .dm-container {
     display: flex;
     height: 70vh;
@@ -110,15 +50,10 @@ body {
     border-radius: var(--radius);
     background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
     overflow: hidden;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18); /* match index.css */
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
     border: 1px solid rgba(255,255,255,0.12);
-    backdrop-filter: blur(8px);              /* glass effect */
-    -webkit-backdrop-filter: blur(8px);      /* Safari support */
-    transition: box-shadow 0.2s;
-}
-
-.dm-container:hover {
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22); /* match index.css hover */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 /* Sidebar */
@@ -137,40 +72,22 @@ body {
     color: var(--text);
     font-weight: 600;
     text-align: center;
-    font-size: 1.1em;
-    letter-spacing: 0.5px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
-    border-top-left-radius: var(--radius);
 }
 
-.user-list {
-    overflow-y: auto;
-    flex: 1;
-    background: transparent;
-}
-
+.user-list { overflow-y: auto; flex: 1; }
 .user-card {
     display: block;
     padding: 14px 18px;
     text-decoration: none;
     color: var(--text);
     border-bottom: 1px solid rgba(255,255,255,0.04);
-    transition: background 0.18s, color 0.18s;
+    transition: 0.18s;
     cursor: pointer;
-    font-size: 1em;
     border-left: 4px solid transparent;
-    border-radius: 0 8px 8px 0;
 }
-
-.user-card:hover {
-    background: rgba(59, 130, 246, 0.08);
-    color: var(--primary);
-}
-.user-card.active {
-    background: var(--primary);
-    color: #fff;
-    border-left: 4px solid var(--primary-700);
-}
+.user-card:hover { background: rgba(59, 130, 246, 0.08); color: var(--primary); }
+.user-card.active { background: var(--primary); color: #fff; border-left: 4px solid var(--primary-700); }
 
 /* Chat Area */
 .dm-chat-area {
@@ -182,13 +99,10 @@ body {
 
 .chat-header {
     padding: 18px 20px;
-    background: transparent;
     border-bottom: 1px solid rgba(255,255,255,0.06);
     font-weight: 600;
-    font-size: 1.1em;
-    letter-spacing: 0.2px;
-    color: var(--text);
 }
+.header-profile-link { color: white; text-decoration: underline; }
 
 .chat-messages {
     flex: 1;
@@ -196,155 +110,166 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    background: transparent;
+    gap: 8px; /* Spațiu între rânduri */
 }
 
-.chat-input-area {
-    padding: 16px 20px;
-    background: transparent;
-    border-top: 1px solid rgba(255,255,255,0.06);
+/* --- LOGICĂ MSG-ROW (Identică cu index.css) --- */
+.msg-row {
     display: flex;
-    gap: 10px;
-}
-.chat-input-area textarea {
-    flex: 1;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(3, 6, 23, 0.55);
-    color: var(--text);
-    outline: none;
-    font-size: 1em;
-    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-    
-    /* Proprietăți pentru scroll și fixare */
-    resize: none;
-    height: 50px; 
-    overflow-y: auto;
-    font-family: inherit;
-    line-height: 1.4;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 4px;
+    position: relative;
 }
 
-.chat-input-area textarea::placeholder {
-    color: var(--muted);
-}
+.msg-row.sent { justify-content: flex-end; }
+.msg-row.received { justify-content: flex-start; }
 
-.chat-input-area textarea:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px var(--ring);
-    background: rgba(6, 10, 30, 0.7);
-}
-
-.chat-input-area button {
-    padding: 10px 24px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
-    color: #fff;
-    font-weight: 600;
-    font-size: 1em;
-    cursor: pointer;
-    transition: transform 120ms ease, filter 160ms ease;
-}
-.chat-input-area button:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.05);
-}
-
-/* Message Bubbles */
+/* BULE */
 .msg-bubble {
     max-width: 70%;
-    padding: 8px 12px;
-    border-radius: 16px;
+    padding: 10px 14px;
+    border-radius: 18px;
     font-size: 1em;
     line-height: 1.4;
     position: relative;
     word-break: break-word;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-
-    /* Flexbox pentru layout vertical */
     display: flex;
     flex-direction: column;
 }
 
-/* Stilul pentru Oră - Dreapta Jos */
-.msg-time {
-    align-self: flex-end;
-    font-size: 0.65em;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 2px;
-    line-height: 1;
-    margin-bottom: -2px;
+.msg-sent .reaction-tag.active {
+    background: rgba(255, 255, 255, 0.25); /* Fundal mai deschis */
+    border-color: rgba(255, 255, 255, 0.9); /* Bordură albă puternică */
+    color: #fff;
 }
 
-/* Pentru mesajele primite (fundal deschis), ora mai închisă */
-.msg-received .msg-time {
-    color: rgba(205, 200, 200, 0.629);
+/* Opțional: Reacțiile inactive pe mesajele trimise să fie puțin mai întunecate */
+.msg-sent .reaction-tag {
+    background: rgba(0, 0, 0, 0.15); 
+}
+
+.msg-sent .reaction-tag:hover {
+    background: rgba(0, 0, 0, 0.25);
 }
 
 .msg-sent {
-    align-self: flex-end;
     background: var(--primary);
     color: #fff;
     border-bottom-right-radius: 4px;
 }
-
-.msg-text {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
 .msg-received {
-    align-self: flex-start;
     background: rgba(59, 130, 246, 0.08);
     color: var(--text);
     border-bottom-left-radius: 4px;
 }
 
-.empty-state {
+/* Elemente interne mesaj */
+.msg-text { white-space: pre-wrap; word-wrap: break-word; }
+.chat-image { max-width: 100%; max-height: 300px; border-radius: 8px; margin-bottom: 5px; }
+
+.msg-time {
+    align-self: flex-end;
+    font-size: 0.65em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+    line-height: 1;
+}
+.msg-received .msg-time { color: rgba(205, 200, 200, 0.629); }
+
+/* --- REACȚII --- */
+.msg-reactions {
     display: flex;
     align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--muted);
-    font-size: 1.15em;
-    background: transparent;
+    gap: 5px;
+    margin-top: 5px;
+    flex-wrap: wrap;
 }
 
-.header-profile-link {
-    color: white;
-    text-decoration: underline;
-    font-weight: bold;
-}
-.header-profile-link:hover {
-    color: #ddd;
-}
-
-.upload-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px; /* Același cu înălțimea minimă a textarea */
+.reaction-tag {
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.75em;
     cursor: pointer;
-    font-size: 1.5rem;
-    color: var(--text);
-    transition: background 0.2s;
-    flex-shrink: 0; /* Previne micșorarea butonului */
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    color: #eee;
+}
+.reaction-tag:hover { background: rgba(255, 255, 255, 0.2); }
+.reaction-tag.active { background: rgba(59, 130, 246, 0.3); border-color: rgba(59, 130, 246, 0.5); }
+
+/* Buton Extern (Smiley) */
+.reaction-picker-wrapper {
+    position: relative;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    align-self: center;
+}
+.msg-row:hover .reaction-picker-wrapper { opacity: 1; }
+
+.add-reaction-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.3em;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+}
+.add-reaction-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+/* Meniu Emoji */
+.reaction-menu {
+    display: none;
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-2);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 6px;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    white-space: nowrap;
+    z-index: 100;
+    gap: 4px;
+}
+.reaction-picker-wrapper:hover .reaction-menu { display: flex; animation: fadeIn 0.15s ease-out; }
+.reaction-menu span { cursor: pointer; padding: 5px; font-size: 1.3em; transition: transform 0.1s; border-radius: 50%; }
+.reaction-menu span:hover { transform: scale(1.2); background: rgba(255,255,255,0.1); }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-.upload-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+/* Input Area */
+.chat-input-area {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    gap: 10px;
 }
-
-.chat-image {
-    display: block;
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 8px;
-    margin-bottom: 5px;
+.chat-input-area textarea {
+    flex: 1; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(3, 6, 23, 0.55);
+    color: var(--text); outline: none; resize: none; height: 50px;
+}
+.chat-input-area button {
+    padding: 10px 24px; border-radius: 10px;
+    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
+    color: #fff; font-weight: 600; border: 1px solid rgba(255,255,255,0.12);
     cursor: pointer;
+}
+.upload-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px; cursor: pointer; font-size: 1.5rem; color: var(--text);
 }

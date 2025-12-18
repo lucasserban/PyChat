@@ -154,6 +154,21 @@ body {
     word-wrap: break-word;
 }
 
+.msg-sent .reaction-tag.active {
+    background: rgba(255, 255, 255, 0.25); /* Fundal mai deschis */
+    border-color: rgba(255, 255, 255, 0.9); /* Bordură albă puternică */
+    color: #fff;
+}
+
+/* Opțional: Reacțiile inactive pe mesajele trimise să fie puțin mai întunecate */
+.msg-sent .reaction-tag {
+    background: rgba(0, 0, 0, 0.15); 
+}
+
+.msg-sent .reaction-tag:hover {
+    background: rgba(0, 0, 0, 0.25);
+}
+
 .sender-name {
     font-size: 0.85em;
     font-weight: 700;
