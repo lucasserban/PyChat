@@ -177,6 +177,9 @@ def send_request(username):
         db.session.commit()
         flash(f'Friend request sent to {username}!')
         
+    if request.referrer and 'profile' in request.referrer:
+        return redirect(request.referrer)
+        
     return redirect(url_for('dms'))
 
 @app.route('/accept_request/<int:request_id>')
@@ -212,7 +215,34 @@ def reject_request(request_id):
 @login_required
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
-    return render_template('profile.html', user=user)
+    
+    current_username = session.get('username')
+    current_user = User.query.filter_by(username=current_username).first()
+    
+    # Determine Friendship Status
+    friendship_status = 'none' # Default: no relationship
+    
+    if current_username == username:
+        friendship_status = 'self'
+    else:
+        # Check database for any existing friendship record
+        friendship = Friendship.query.filter(
+            or_(
+                (Friendship.sender_id == current_user.id) & (Friendship.receiver_id == user.id),
+                (Friendship.sender_id == user.id) & (Friendship.receiver_id == current_user.id)
+            )
+        ).first()
+
+        if friendship:
+            if friendship.status == 'accepted':
+                friendship_status = 'friends'
+            elif friendship.status == 'pending':
+                if friendship.sender_id == current_user.id:
+                    friendship_status = 'pending_sent'     # You sent the request
+                else:
+                    friendship_status = 'pending_received' # They sent you a request
+
+    return render_template('profile.html', user=user, friendship_status=friendship_status)
 
 @app.route('/account', methods=['GET', 'POST'])
 @login_required

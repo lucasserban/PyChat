@@ -27,11 +27,26 @@
     </div>
 
     <div class="profile-actions">
-        {% if session['username'] != user.username %}
+        
+        {% if friendship_status == 'self' %}
+            <a href="{{ url_for('account') }}" class="btn btn-dm">Edit Profile</a>
+
+        {% elif friendship_status == 'friends' %}
             <a href="{{ url_for('dms', username=user.username) }}" class="btn btn-dm">Message</a>
+
+        {% elif friendship_status == 'pending_sent' %}
+            <button class="btn btn-back" disabled style="opacity: 0.7; cursor: default; background: rgba(255,255,255,0.05);">
+                Request Pending
+            </button>
+
+        {% elif friendship_status == 'pending_received' %}
+            <a href="{{ url_for('account') }}" class="btn btn-dm">Respond to Request</a>
+
         {% else %}
-             <a href="{{ url_for('account') }}" class="btn btn-dm">Edit</a>
+            <a href="{{ url_for('send_request', username=user.username) }}" class="btn btn-dm">Add Friend</a>
+
         {% endif %}
+
         <a href="javascript:history.back()" class="btn btn-back">Back</a>
     </div>
 </div>
