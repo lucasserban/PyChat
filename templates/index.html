@@ -8,27 +8,71 @@
   <h1>Global Chat</h1>
     <div id="chat">
         {% for msg in history %}
-            <div class="msg-bubble {{ 'msg-sent' if msg.username == username else 'msg-received' }}">
-                {% if msg.username != username %}
-                    <div class="sender-name">
-                        <a href="{{ url_for('profile', username=msg.username) }}">
-                            {{ msg.username }}
-                        </a>
+            <div class="msg-row {{ 'sent' if msg.username == username else 'received' }}">
+                
+                {% if msg.username == username %}
+                    <div class="reaction-picker-wrapper">
+                        <button class="add-reaction-btn">☺</button> <div class="reaction-menu">
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="👍">👍</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="❤️">❤️</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😂">😂</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😮">😮</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😢">😢</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😡">😡</span>
+                        </div>
                     </div>
                 {% endif %}
                 
-                {% if msg.image %}
-                    <img src="{{ url_for('static', filename='chat_uploads/' + msg.image) }}" class="chat-image">
+                <div class="msg-bubble {{ 'msg-sent' if msg.username == username else 'msg-received' }}" data-msg-id="{{ msg.id }}">
+                    {% if msg.username != username %}
+                        <div class="sender-name">
+                            <a href="{{ url_for('profile', username=msg.username) }}">
+                                {{ msg.username }}
+                            </a>
+                        </div>
+                    {% endif %}
+                    
+                    {% if msg.image %}
+                        <img src="{{ url_for('static', filename='chat_uploads/' + msg.image) }}" class="chat-image">
+                    {% endif %}
+                    
+                    {% if msg.msg %}
+                        <div class="msg-text">{{ msg.msg }}</div>
+                    {% endif %}
+                        
+                    <div class="msg-reactions">
+                        <div class="reaction-list" id="reactions-{{ msg.id }}">
+                            {% for r in msg.reactions %}
+                                <span class="reaction-tag {{ 'active' if r.user_has_reacted else '' }}" 
+                                      onclick="sendReaction(this)"
+                                      data-id="{{ msg.id }}"
+                                      data-emoji="{{ r.emoji }}">
+                                    {{ r.emoji }} {{ r.count }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                
+                    <div class="msg-time">{{ msg.timestamp }}</div>
+                </div>
+            
+                {% if msg.username != username %}
+                    <div class="reaction-picker-wrapper">
+                        <button class="add-reaction-btn">☺</button>
+                        <div class="reaction-menu">
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="👍">👍</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="❤️">❤️</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😂">😂</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😮">😮</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😢">😢</span>
+                            <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😡">😡</span>
+                        </div>
+                    </div>
                 {% endif %}
                 
-                {% if msg.msg %}
-                    <div class="msg-text">{{ msg.msg }}</div>
-                {% endif %}
-
-                <div class="msg-time">{{ msg.timestamp }}</div>
             </div>
         {% endfor %}
-  </div>
+    </div>
 
   <div id="controls">
     <label for="image-input" class="upload-btn">
