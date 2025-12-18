@@ -17,13 +17,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- Upload Configuration ---
 UPLOAD_FOLDER = os.path.join('static', 'profile_pics')
-CHAT_UPLOAD_FOLDER = os.path.join('static', 'chat_uploads') # Folder nou pentru imagini chat
+CHAT_UPLOAD_FOLDER = os.path.join('static', 'chat_uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['CHAT_UPLOAD_FOLDER'] = CHAT_UPLOAD_FOLDER
 
-# Ensure the upload directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['CHAT_UPLOAD_FOLDER'], exist_ok=True)
 
@@ -39,17 +38,16 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False) 
-    email = db.Column(db.String(120), nullable=False) # Mandatory
+    email = db.Column(db.String(120), nullable=False) 
     bio = db.Column(db.String(200), nullable=True) 
-    profile_pic = db.Column(db.String(150), nullable=True) # Optional
+    profile_pic = db.Column(db.String(150), nullable=True) 
 
 class Friendship(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # 'pending' or 'accepted'
+    status = db.Column(db.String(20), default='pending')
     
-    # Relationships to access user details easily
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_requests')
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_requests')
 
@@ -57,9 +55,15 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_username = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
     recipient_username = db.Column(db.String(80), nullable=True)
-    content = db.Column(db.String(500), nullable=True) # Acum poate fi null dacă e doar imagine
-    image_filename = db.Column(db.String(200), nullable=True) # Coloană nouă pentru imagine
+    content = db.Column(db.String(500), nullable=True)
+    image_filename = db.Column(db.String(200), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class MessageReaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
+    user_username = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
+    emoji = db.Column(db.String(10), nullable=False)
 
 with app.app_context():
     db.create_all()
@@ -84,15 +88,37 @@ def index():
         .limit(50).all()
     messages = messages[::-1]
     
-    # ADĂUGAT: 'timestamp': m.timestamp.strftime('%H:%M')
-    history = [{
-        'username': m.sender_username, 
-        'msg': m.content if m.content else "", 
-        'image': m.image_filename,
-        'timestamp': m.timestamp.strftime('%H:%M') 
-    } for m in messages]
+    history = []
+    current_user = session.get('username')
+
+    for m in messages:
+        reactions = MessageReaction.query.filter_by(message_id=m.id).all()
+        
+        reactions_map = {}
+        for r in reactions:
+            if r.emoji not in reactions_map:
+                reactions_map[r.emoji] = {'count': 0, 'users': []}
+            reactions_map[r.emoji]['count'] += 1
+            reactions_map[r.emoji]['users'].append(r.user_username)
+        
+        reactions_list = []
+        for emoji, data in reactions_map.items():
+            reactions_list.append({
+                'emoji': emoji,
+                'count': data['count'],
+                'user_has_reacted': current_user in data['users']
+            })
+
+        history.append({
+            'id': m.id, 
+            'username': m.sender_username, 
+            'msg': m.content if m.content else "", 
+            'image': m.image_filename,
+            'timestamp': m.timestamp.strftime('%H:%M'),
+            'reactions': reactions_list
+        })
     
-    return render_template('index.html', username=session.get('username'), history=history)
+    return render_template('index.html', username=current_user, history=history)
 
 @app.route('/dms', methods=['GET', 'POST'])
 @app.route('/dms/<username>', methods=['GET', 'POST'])
@@ -101,31 +127,22 @@ def dms(username=None):
     current_username = session.get('username')
     current_user_obj = User.query.filter_by(username=current_username).first()
     
-    # --- 1. SEARCH FUNCTIONALITY ---
     search_results = []
     if request.method == 'POST':
         search_query = request.form.get('search_username', '').strip()
         if search_query:
-            # Find users matching name, excluding self
             results = User.query.filter(User.username.ilike(f"%{search_query}%"), User.username != current_username).all()
-            
-            # Filter out people who are already friends or have pending requests to avoid duplicates
-            # (Simplified for this example: just showing all matches)
             search_results = results
 
-    # --- 2. GET FRIENDS LIST ---
-    # Fetch all accepted friendships involving the current user
     friends_sent = Friendship.query.filter_by(sender_id=current_user_obj.id, status='accepted').all()
     friends_received = Friendship.query.filter_by(receiver_id=current_user_obj.id, status='accepted').all()
     
-    # Collect the User objects of the friends
     friends = []
     for f in friends_sent:
         friends.append(f.receiver)
     for f in friends_received:
         friends.append(f.sender)
 
-    # --- 3. CHAT HISTORY (Keep existing logic, but use 'friends' list for sidebar) ---
     history = []
     if username:
         messages = Message.query.filter(
@@ -136,18 +153,38 @@ def dms(username=None):
         ).order_by(Message.timestamp.asc()).all()
         
         for m in messages:
+            # --- LOGICĂ ADĂUGATĂ PENTRU REACȚII ---
+            reactions = MessageReaction.query.filter_by(message_id=m.id).all()
+            reactions_map = {}
+            for r in reactions:
+                if r.emoji not in reactions_map:
+                    reactions_map[r.emoji] = {'count': 0, 'users': []}
+                reactions_map[r.emoji]['count'] += 1
+                reactions_map[r.emoji]['users'].append(r.user_username)
+            
+            reactions_list = []
+            for emoji, data in reactions_map.items():
+                reactions_list.append({
+                    'emoji': emoji,
+                    'count': data['count'],
+                    'user_has_reacted': current_username in data['users']
+                })
+            # ---------------------------------------
+
             romania_tz = timezone(timedelta(hours=2))
             current_time = datetime.now(romania_tz).strftime('%H:%M')
             history.append({
+                'id': m.id,  # IMPORTANT: Avem nevoie de ID
                 'sender_username': m.sender_username,
                 'content': m.content,
                 'image_filename': m.image_filename,
-                'timestamp': current_time # Note: Real apps should use m.timestamp
+                'timestamp': current_time,
+                'reactions': reactions_list # Trimitem reacțiile
             })
 
     return render_template('dms.html', 
-                         users_list=friends,   # Only pass Friends to the sidebar
-                         search_results=search_results, # Pass search results
+                         users_list=friends,
+                         search_results=search_results,
                          active_recipient=username, 
                          history=history)
 
@@ -161,7 +198,6 @@ def send_request(username):
         flash('User not found.')
         return redirect(url_for('dms'))
     
-    # Check if request already exists
     existing = Friendship.query.filter(
         or_(
             (Friendship.sender_id == sender.id) & (Friendship.receiver_id == receiver.id),
@@ -186,7 +222,6 @@ def send_request(username):
 @login_required
 def accept_request(request_id):
     req = Friendship.query.get_or_404(request_id)
-    # Verify the current user is the receiver
     current_user = User.query.filter_by(username=session['username']).first()
     
     if req.receiver_id != current_user.id:
@@ -250,7 +285,6 @@ def account():
     username = session.get('username')
     user = User.query.filter_by(username=username).first()
 
-    # Handle Profile Updates
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         bio = request.form.get('bio', '').strip()
@@ -272,7 +306,6 @@ def account():
             flash('Profile updated successfully!')
             return redirect(url_for('account'))
 
-    # FETCH PENDING REQUESTS
     pending_requests = Friendship.query.filter_by(receiver_id=user.id, status='pending').all()
 
     return render_template('account.html', user=user, pending_requests=pending_requests)
@@ -293,29 +326,23 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        # 1. Preluăm datele din formular
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         email = request.form.get('email', '').strip()
         bio = request.form.get('bio', '').strip()
 
-        # Validări de bază
         if not username or not password or not email:
             flash('All fields (Username, Password, Email) are mandatory.')
         elif User.query.filter_by(username=username).first():
             flash('Username already exists')
         else:
-            # 2. Procesăm imaginea de profil (dacă există)
             profile_pic_filename = None
             if 'profile_pic' in request.files:
                 file = request.files['profile_pic']
                 if file and file.filename != '':
                     if allowed_file(file.filename):
                         filename = secure_filename(file.filename)
-                        # Generăm un nume unic folosind username-ul și timestamp-ul
-                        # (Nu avem încă user.id, deci folosim username care e unic)
                         unique_filename = f"{username}_{int(datetime.utcnow().timestamp())}_{filename}"
-                        
                         file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                         try:
                             file.save(file_path)
@@ -324,22 +351,18 @@ def register():
                             print(f"Error saving profile pic: {e}")
                     else:
                         flash('Invalid file type. Allowed: png, jpg, jpeg, gif')
-                        # Dacă fișierul nu e bun, poți decide să oprești înregistrarea sau să continui fără poză.
-                        # Aici alegem să continuăm fără poză sau să dăm return (opțional).
             
-            # 3. Creăm utilizatorul cu toate datele
             pw_hash = generate_password_hash(password)
             new_user = User(
                 username=username, 
                 password=pw_hash, 
                 email=email,
-                bio=bio,                      # Adăugăm Bio
-                profile_pic=profile_pic_filename # Adăugăm Imaginea
+                bio=bio,
+                profile_pic=profile_pic_filename
             )
             
             db.session.add(new_user)
             db.session.commit()
-            
             flash('Registration successful. Please log in.')
             return redirect(url_for('login'))
             
@@ -365,11 +388,11 @@ def handle_message(data):
         db.session.add(new_msg)
         db.session.commit()
         
-        # ADĂUGAT: timestamp calculat acum
         romania_tz = timezone(timedelta(hours=2))
         current_time = datetime.now(romania_tz).strftime('%H:%M')
         
         emit('receive_message', {
+            'id': new_msg.id, # IMPORTANT for reactions
             'username': username, 
             'msg': msg,
             'timestamp': current_time 
@@ -378,29 +401,24 @@ def handle_message(data):
 @socketio.on('upload_image')
 def handle_image(data):
     username = data.get('username', 'Anonymous')
-    file_data = data.get('image') # Base64 string
+    file_data = data.get('image')
     file_name = data.get('fileName')
     
     if file_data and file_name:
         try:
-            # Procesare string Base64 (eliminăm header-ul data:image/...)
             if "," in file_data:
                 _, encoded = file_data.split(",", 1)
             else:
                 encoded = file_data
                 
             data_bytes = base64.b64decode(encoded)
-            
-            # Generare nume unic
             safe_name = secure_filename(file_name)
             unique_name = f"{int(datetime.now(timezone.utc).timestamp())}_{safe_name}"
             file_path = os.path.join(app.config['CHAT_UPLOAD_FOLDER'], unique_name)
             
-            # Salvare pe disk
             with open(file_path, "wb") as f:
                 f.write(data_bytes)
                 
-            # Salvare în baza de date (mesaj gol, doar imagine)
             new_msg = Message(
                 sender_username=username, 
                 content="", 
@@ -412,8 +430,8 @@ def handle_image(data):
             romania_tz = timezone(timedelta(hours=2))
             current_time = datetime.now(romania_tz).strftime('%H:%M')
 
-            # Emitere către clienți
             emit('receive_message', {
+                'id': new_msg.id,
                 'username': username, 
                 'msg': "", 
                 'image': unique_name,
@@ -440,7 +458,6 @@ def handle_private_message(data):
         db.session.add(new_msg)
         db.session.commit()
         
-        # Ora curentă România
         romania_tz = timezone(timedelta(hours=2))
         current_time = datetime.now(romania_tz).strftime('%H:%M')
 
@@ -453,44 +470,35 @@ def handle_private_message(data):
 
 @socketio.on('upload_private_image')
 def handle_private_image(data):
-    # Luăm expeditorul din sesiune pentru securitate, sau din data
     sender = session.get('username') 
     recipient = data.get('recipient')
-    file_data = data.get('image') # Base64 string
+    file_data = data.get('image')
     file_name = data.get('fileName')
 
     if file_data and file_name and sender and recipient:
         try:
-            # 1. Procesare string Base64 (eliminăm header-ul)
             if "," in file_data:
                 header, encoded = file_data.split(",", 1)
             else:
                 encoded = file_data
                 
             data_bytes = base64.b64decode(encoded)
-            
-            # 2. Generare nume unic
             safe_name = secure_filename(file_name)
             unique_name = f"{int(datetime.utcnow().timestamp())}_{safe_name}"
             file_path = os.path.join(app.config['CHAT_UPLOAD_FOLDER'], unique_name)
             
-            # 3. Salvare pe disk
             with open(file_path, "wb") as f:
                 f.write(data_bytes)
                 
-            # 4. Salvare în baza de date
-            # Important: setăm recipient_username pentru a fi un DM
             new_msg = Message(
                 sender_username=sender, 
                 recipient_username=recipient,
-                content="", # Text gol
+                content="", 
                 image_filename=unique_name
             )
             db.session.add(new_msg)
             db.session.commit()
             
-            # 5. Emitere către cameră (Room)
-            # Calculăm numele camerei exact ca la 'join_dm'
             room = f"dm_{'-'.join(sorted([sender, recipient]))}"
             
             emit('receive_private_message', {
@@ -502,5 +510,70 @@ def handle_private_image(data):
         except Exception as e:
             print(f"Error saving private image: {e}")
 
+# --- REACTION LOGIC (Must be BEFORE socketio.run) ---
+@socketio.on('react_to_message')
+def handle_reaction(data):
+    username = data.get('username')
+    msg_id = data.get('message_id')
+    emoji = data.get('emoji')
+
+    try:
+        msg_id = int(msg_id)
+    except (TypeError, ValueError):
+        return
+    
+    if not username or not msg_id or not emoji:
+        return
+
+    # 1. Găsim mesajul pentru a vedea dacă e DM sau Global
+    message = Message.query.get(msg_id)
+    if not message:
+        return
+
+    existing = MessageReaction.query.filter_by(message_id=msg_id, user_username=username, emoji=emoji).first()
+    
+    if existing:
+        db.session.delete(existing)
+    else:
+        new_r = MessageReaction(message_id=msg_id, user_username=username, emoji=emoji)
+        db.session.add(new_r)
+    
+    db.session.commit()
+    
+    # Recalculăm reacțiile
+    all_reactions = MessageReaction.query.filter_by(message_id=msg_id).all()
+    
+    reactions_map = {}
+    for r in all_reactions:
+        if r.emoji not in reactions_map:
+            reactions_map[r.emoji] = {'count': 0, 'users': []}
+        reactions_map[r.emoji]['count'] += 1
+        reactions_map[r.emoji]['users'].append(r.user_username)
+        
+    reactions_list = []
+    for emoji, r_data in reactions_map.items():
+        reactions_list.append({
+            'emoji': emoji,
+            'count': r_data['count'],
+            'users': r_data['users']
+        })
+        
+    response_data = {
+        'message_id': msg_id,
+        'reactions': reactions_list
+    }
+
+    # 2. Trimitem evenimentul în camera corectă
+    if message.recipient_username:
+        # Este un mesaj privat (DM)
+        # Reconstruim numele camerei DM: dm_user1-user2 (sortat alfabetic)
+        participants = sorted([message.sender_username, message.recipient_username])
+        room_name = f"dm_{'-'.join(participants)}"
+        emit('update_message_reactions', response_data, room=room_name)
+    else:
+        # Este mesaj global
+        emit('update_message_reactions', response_data, room='global_chat')
+
+# --- MAIN ENTRY POINT (Must be at the very END) ---
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

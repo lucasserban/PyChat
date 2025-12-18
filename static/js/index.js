@@ -10,7 +10,63 @@ if(chatContainer) {
 }
 
 socket.on('connect', () => {
-    socket.emit('join', { username: window.currentUsername });
+    if (window.currentUsername) {
+        socket.emit('join', { username: window.currentUsername });
+    }
+});
+
+// --- UNIVERSAL REACTION FUNCTION ---
+// Fixes the "can't click" bug by handling both HTML styles:
+// 1. onclick="sendReaction(this)"
+// 2. onclick="sendReaction(msg.id, 'emoji')"
+window.sendReaction = function(arg1, arg2) {
+    let messageId, emoji;
+
+    // Case A: Passed as an HTML Element (using 'this')
+    if (arg1 && typeof arg1.getAttribute === 'function') {
+        messageId = arg1.getAttribute('data-id');
+        emoji = arg1.getAttribute('data-emoji');
+    } 
+    // Case B: Passed as raw values (ID and Emoji string)
+    else {
+        messageId = arg1;
+        emoji = arg2;
+    }
+    
+    // Debug: Check your console if it's still not working
+    console.log("Attempting reaction:", messageId, emoji, window.currentUsername);
+
+    if (messageId && emoji && window.currentUsername) {
+        socket.emit('react_to_message', {
+            message_id: messageId,
+            emoji: emoji,
+            username: window.currentUsername
+        });
+    } else {
+        console.error("Reaction failed: Missing data", {messageId, emoji, user: window.currentUsername});
+    }
+};
+
+// --- LISTENER FOR UPDATES ---
+socket.on('update_message_reactions', data => {
+    const msgId = data.message_id;
+    const reactions = data.reactions; 
+    
+    const reactionList = document.getElementById(`reactions-${msgId}`);
+    if (reactionList) {
+        let html = '';
+        reactions.forEach(r => {
+            const isMe = r.users.includes(window.currentUsername);
+            // We use the robust 'this' method for dynamically added tags
+            html += `<span class="reaction-tag ${isMe ? 'active' : ''}" 
+                           onclick="sendReaction(this)"
+                           data-id="${msgId}"
+                           data-emoji="${r.emoji}">
+                       ${r.emoji} ${r.count}
+                     </span>`;
+        });
+        reactionList.innerHTML = html;
+    }
 });
 
 function appendMessage(data) {
@@ -18,45 +74,106 @@ function appendMessage(data) {
     
     const isMe = data.username === window.currentUsername;
     
-    const div = document.createElement('div');
-    div.className = isMe ? 'msg-bubble msg-sent' : 'msg-bubble msg-received';
+    // 1. Creăm containerul rând (Row)
+    const rowDiv = document.createElement('div');
+    rowDiv.className = `msg-row ${isMe ? 'sent' : 'received'}`;
+    
+    // 2. Construim butonul de reacție (HTML-ul pentru el)
+    // Îl definim ca string HTML pentru simplitate
+    const reactionPickerHTML = `
+        <div class="reaction-picker-wrapper">
+            <button class="add-reaction-btn">☺</button>
+            <div class="reaction-menu">
+                <span onclick="sendReaction(this)" data-id="${data.id}" data-emoji="👍">👍</span>
+                <span onclick="sendReaction(this)" data-id="${data.id}" data-emoji="❤️">❤️</span>
+                <span onclick="sendReaction(this)" data-id="${data.id}" data-emoji="😂">😂</span>
+                <span onclick="sendReaction(this)" data-id="${data.id}" data-emoji="😮">😮</span>
+                <span onclick="sendReaction(this)" data-id="${data.id}" data-emoji="😢">😢</span>
+                <span onclick="sendReaction(this)" data-id="${data.id}" data-emoji="😡">😡</span>
+            </div>
+        </div>
+    `;
+
+    // 3. Dacă e mesajul MEU, punem butonul ÎNAINTE de bulă
+    if (isMe && data.id) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = reactionPickerHTML;
+        rowDiv.appendChild(tempDiv.firstElementChild);
+    }
+
+    // 4. Construim Bula (Bubble)
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = isMe ? 'msg-bubble msg-sent' : 'msg-bubble msg-received';
+    if (data.id) bubbleDiv.setAttribute('data-msg-id', data.id);
     
     if (!isMe) {
         const nameDiv = document.createElement('div');
         nameDiv.className = 'sender-name';
-        
         const link = document.createElement('a');
         link.href = `/profile/${data.username}`;
         link.innerText = data.username;
         nameDiv.appendChild(link);
-        div.appendChild(nameDiv);
+        bubbleDiv.appendChild(nameDiv);
     }
 
-    // 1. Imagine
     if (data.image) {
         const img = document.createElement('img');
         img.src = '/static/chat_uploads/' + data.image;
         img.className = 'chat-image';
-        div.appendChild(img);
+        bubbleDiv.appendChild(img);
     }
 
-    // 2. Text
     if (data.msg) {
         const textDiv = document.createElement('div');
         textDiv.className = 'msg-text';
         textDiv.innerText = data.msg;
-        div.appendChild(textDiv);
+        bubbleDiv.appendChild(textDiv);
     }
 
-    // 3. ADĂUGAT: Ora (Timestamp)
+    // Container pentru reacțiile deja existente (sub text)
+    if (data.id) {
+        const reactDiv = document.createElement('div');
+        reactDiv.className = 'msg-reactions';
+        
+        const listDiv = document.createElement('div');
+        listDiv.className = 'reaction-list';
+        listDiv.id = `reactions-${data.id}`;
+        
+        // Dacă primești mesajul cu reacții deja (rar la append live, dar util)
+        if (data.reactions && data.reactions.length > 0) {
+            data.reactions.forEach(r => {
+                const tag = document.createElement('span');
+                tag.className = `reaction-tag ${r.user_has_reacted ? 'active' : ''}`;
+                tag.setAttribute('onclick', 'sendReaction(this)');
+                tag.setAttribute('data-id', data.id);
+                tag.setAttribute('data-emoji', r.emoji);
+                tag.innerText = `${r.emoji} ${r.count}`;
+                listDiv.appendChild(tag);
+            });
+        }
+        reactDiv.appendChild(listDiv);
+        bubbleDiv.appendChild(reactDiv);
+    }
+
     if (data.timestamp) {
         const timeDiv = document.createElement('div');
         timeDiv.className = 'msg-time';
         timeDiv.innerText = data.timestamp;
-        div.appendChild(timeDiv);
+        bubbleDiv.appendChild(timeDiv);
+    }
+
+    // Adăugăm bula în rând
+    rowDiv.appendChild(bubbleDiv);
+
+    // 5. Dacă e mesajul ALTCUIVA, punem butonul DUPĂ bulă
+    if (!isMe && data.id) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = reactionPickerHTML;
+        rowDiv.appendChild(tempDiv.firstElementChild);
     }
     
-    chatContainer.appendChild(div);
+    // Adăugăm tot rândul în chat
+    chatContainer.appendChild(rowDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
@@ -73,7 +190,6 @@ socket.on('system_message', data => {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 
-// Send Logic
 function sendMessage() {
     if (!msgInput) return;
     const msg = msgInput.value.trim();
@@ -85,25 +201,23 @@ function sendMessage() {
     });
     
     msgInput.value = '';
-    msgInput.style.height = '50px'; // Reset height if auto-expand was used
+    msgInput.style.height = '50px'; 
 }
 
-// Send Image Logic (NOU)
 if (imageInput) {
     imageInput.addEventListener('change', function() {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function(evt) {
-                // Trimitem imaginea ca base64
                 socket.emit('upload_image', {
                     username: window.currentUsername,
-                    image: evt.target.result, // base64 string
+                    image: evt.target.result, 
                     fileName: file.name
                 });
             };
             reader.readAsDataURL(file);
-            this.value = ''; // Reset input
+            this.value = ''; 
         }
     });
 }

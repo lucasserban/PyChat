@@ -24,6 +24,7 @@ body {
     height: 100%;
 }
 
+/* --- HEADER --- */
 .site-header {
     position: sticky;
     top: 0;
@@ -31,6 +32,7 @@ body {
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: var(--radius);
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    z-index: 10;
 }
 
 .site-header:hover {
@@ -78,12 +80,11 @@ body {
     color: #ffcccc;
 }
 
-/* --- Stiluri Chat (Modificate) --- */
+/* --- CHAT CONTAINER --- */
 #chat { 
-    /* Stiluri originale restaurate */
     height: 400px;
     overflow-y: auto;
-    padding: 2rem 2.5rem;
+    padding: 2rem 1.5rem; /* Padding lateral mai mic */
     background: linear-gradient(120deg, rgba(17,24,39,0.85) 60%, rgba(59,130,246,0.08) 100%);
     border: 1.5px solid rgba(255,255,255,0.10);
     border-radius: var(--radius);
@@ -92,55 +93,82 @@ body {
     -webkit-backdrop-filter: blur(8px);
     transition: box-shadow 0.2s;
 
-    /* Stiluri noi pentru layout flexibil (bule) */
     display: flex;
     flex-direction: column;
-    gap: 8px; /* Spațiu între mesaje */
+    gap: 4px; /* Spațiu între rândurile de mesaje */
 }
 
-/* Efectul de hover pentru containerul de chat (restaurat din original) */
-.panel:hover,
-.dm-container:hover,
 #chat:hover {
     box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22);
 }
 
-/* --- Stiluri Noi pentru Bule --- */
+/* --- LOGICA NOUĂ: RÂNDURI DE MESAJE (MSG-ROW) --- */
+/* Acesta este containerul care ține Bula + Butonul de reacție pe același rând */
+.msg-row {
+    display: flex;
+    align-items: flex-end; /* Aliniere jos pentru a arăta bine cu timestamp */
+    gap: 8px;              /* Distanța dintre bulă și butonul de emoji */
+    width: 100%;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+/* Mesajele MELE: Aliniate la dreapta */
+.msg-row.sent {
+    justify-content: flex-end;
+}
+
+/* Mesajele LOR: Aliniate la stânga */
+.msg-row.received {
+    justify-content: flex-start;
+}
+
+/* --- BULELE DE MESAJ --- */
 .msg-bubble {
     max-width: 70%;
-    padding: 8px 12px; /* Padding puțin mai mic pentru aspect compact */
-    border-radius: 16px;
+    padding: 10px 14px;
+    border-radius: 18px;
     font-size: 1em;
     line-height: 1.4;
     position: relative;
     word-break: break-word;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-
-    /* Flexbox pentru layout vertical */
     display: flex;
     flex-direction: column;
 }
 
 .msg-sent {
-    align-self: flex-end; /* Aliniere la dreapta */
     background: var(--primary);
     color: #fff;
     border-bottom-right-radius: 4px;
 }
 
 .msg-received {
-    align-self: flex-start; /* Aliniere la stânga */
-    background: rgba(59, 130, 246, 0.08); /* Ușor transparent */
+    background: rgba(59, 130, 246, 0.08); /* Transparent / gri albăstrui */
     color: var(--text);
     border-bottom-left-radius: 4px;
 }
 
 .msg-text {
-    white-space: pre-wrap;  /* Aici e locul corect: afectează doar textul */
+    white-space: pre-wrap;
     word-wrap: break-word;
 }
 
-/* Stil pentru numele expeditorului (doar la mesajele primite) */
+.msg-sent .reaction-tag.active {
+    background: rgba(255, 255, 255, 0.25); /* Fundal mai deschis */
+    border-color: rgba(255, 255, 255, 0.9); /* Bordură albă puternică */
+    color: #fff;
+}
+
+/* Opțional: Reacțiile inactive pe mesajele trimise să fie puțin mai întunecate */
+.msg-sent .reaction-tag {
+    background: rgba(0, 0, 0, 0.15); 
+}
+
+.msg-sent .reaction-tag:hover {
+    background: rgba(0, 0, 0, 0.25);
+}
+
 .sender-name {
     font-size: 0.85em;
     font-weight: 700;
@@ -157,18 +185,144 @@ body {
     text-decoration: underline;
 }
 
-/* --- Alte elemente --- */
+/* --- ORA MESAJULUI --- */
+.msg-time {
+    align-self: flex-end;
+    font-size: 0.65em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+    line-height: 1;
+    margin-bottom: -2px;
+}
+
+.msg-received .msg-time {
+    color: rgba(205, 200, 200, 0.629);
+}
+
+/* --- REACȚII AFISATE (Tag-urile de sub mesaj) --- */
+.msg-reactions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.reaction-tag {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.75em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    color: #eee;
+}
+
+.reaction-tag:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.reaction-tag.active {
+    background: rgba(59, 130, 246, 0.3);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* --- BUTONUL EXTERN DE REACȚIE (SMILEY FACE) --- */
+.reaction-picker-wrapper {
+    position: relative;
+    opacity: 0;             /* Invizibil implicit */
+    transition: opacity 0.2s ease-in-out;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    align-self: center;     /* Centrat vertical față de bulă */
+}
+
+/* Apare doar când pui mouse-ul pe tot rândul (msg-row) */
+.msg-row:hover .reaction-picker-wrapper {
+    opacity: 1;
+}
+
+.add-reaction-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.3em;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.add-reaction-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+
+/* --- MENIUL POPUP CU EMOJI --- */
+.reaction-menu {
+    display: none;
+    position: absolute;
+    bottom: 110%; /* Apare deasupra butonului */
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-2);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 6px;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    white-space: nowrap;
+    z-index: 100;
+    gap: 4px;
+}
+
+/* Afișează meniul la hover pe buton */
+.reaction-picker-wrapper:hover .reaction-menu {
+    display: flex;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.reaction-menu span {
+    cursor: pointer;
+    padding: 5px;
+    font-size: 1.3em;
+    transition: transform 0.1s;
+    border-radius: 50%;
+}
+
+.reaction-menu span:hover {
+    transform: scale(1.2);
+    background: rgba(255,255,255,0.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* --- ALTE ELEMENTE (System messages, Images) --- */
 .sys {
     color: var(--muted);
     font-style: italic;
-    align-self: center; /* Opțional: centrează mesajele de sistem */
-    margin: 5px 0;
+    align-self: center;
+    margin: 10px 0;
+    font-size: 0.9em;
 }
 
-.me {
-    font-weight: 600;
+.chat-image {
+    display: block;
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 12px;
+    margin-bottom: 6px;
+    cursor: pointer;
 }
 
+/* --- CONTROLS AREA --- */
 #controls {
      margin-top: 1rem;
      display:flex;
@@ -177,18 +331,16 @@ body {
 
 #controls textarea {
     flex: 1; 
-    padding: 10px 12px;
-    border-radius: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.12);
     background: rgba(3, 6, 23, 0.55);
     color: var(--text);
     outline: none;
     transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-    
-    /* MODIFICĂRI PENTRU SCROLL ȘI DIMENSIUNE FIXĂ */
-    resize: none;        /* Ascunde colțul de tragere */
-    height: 50px;        /* Înălțime fixă (poți pune 44px sau 60px după preferință) */
-    overflow-y: auto;    /* Activează bara de scroll verticală */
+    resize: none;
+    height: 50px;
+    overflow-y: auto;
     font-family: inherit;
     line-height: 1.4;
 }
@@ -204,8 +356,8 @@ body {
 }
 
 #controls button {
-    padding:10px 12px;
-    border-radius:10px;
+    padding: 0 20px;
+    border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.12);
     background: linear-gradient(180deg, var(--primary) 0%, var(--primary-700) 100%);
     color:#fff;
@@ -219,52 +371,35 @@ body {
     filter: brightness(1.05);
 }
 
-.username-link {
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 600;
-}
-
 .upload-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px; /* Același cu înălțimea minimă a textarea */
-    background: rgba(255, 255, 255, 0.1);
+    width: 50px;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: var(--text);
     transition: background 0.2s;
 }
 
 .upload-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
 }
 
-/* Imaginile din chat */
-.chat-image {
-    display: block;
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    cursor: pointer;
+/* --- SCROLLBAR STYLING --- */
+::-webkit-scrollbar {
+    width: 8px;
 }
-
-.msg-time {
-    align-self: flex-end; /* Împinge ora în dreapta */
-    font-size: 0.65em;    /* Font mic, ca în screenshot */
-    color: rgba(255, 255, 255, 0.7); /* Ușor transparent */
-    margin-top: 2px;      /* Spațiu mic față de text */
-    line-height: 1;       /* Înălțime rând compactă */
-    
-    /* Opțional: Ajustare fină pentru a fi mai aproape de colț */
-    margin-bottom: -2px;
+::-webkit-scrollbar-track {
+    background: transparent; 
 }
-
-/* Ajustare culoare oră pentru mesajele primite (dacă fundalul e deschis) */
-.msg-received .msg-time {
-    color: rgba(205, 200, 200, 0.629);
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1); 
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2); 
 }
