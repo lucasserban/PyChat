@@ -254,11 +254,13 @@ def profile(username):
     current_username = session.get('username')
     current_user = User.query.filter_by(username=current_username).first()
     
-    friendship_status = 'none'
+    # Determine Friendship Status
+    friendship_status = 'none' # Default: no relationship
     
     if current_username == username:
         friendship_status = 'self'
     else:
+        # Check database for any existing friendship record
         friendship = Friendship.query.filter(
             or_(
                 (Friendship.sender_id == current_user.id) & (Friendship.receiver_id == user.id),
@@ -271,9 +273,9 @@ def profile(username):
                 friendship_status = 'friends'
             elif friendship.status == 'pending':
                 if friendship.sender_id == current_user.id:
-                    friendship_status = 'pending_sent'
+                    friendship_status = 'pending_sent'     # You sent the request
                 else:
-                    friendship_status = 'pending_received'
+                    friendship_status = 'pending_received' # They sent you a request
 
     return render_template('profile.html', user=user, friendship_status=friendship_status)
 
