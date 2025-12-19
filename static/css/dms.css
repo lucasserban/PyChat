@@ -21,8 +21,6 @@ body {
     background-repeat: no-repeat;
     min-height: 100vh;
     background-attachment: fixed;
-    overflow: hidden;
-    height: 100%;
 }
 
 /* ... (Stiluri header/nav existente rămân la fel) ... */
@@ -272,4 +270,16 @@ body {
     display: flex; align-items: center; justify-content: center;
     width: 44px; background: rgba(255, 255, 255, 0.1);
     border-radius: 10px; cursor: pointer; font-size: 1.5rem; color: var(--text);
+}
+
+.empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 1.2rem;
+    text-align: center;
+    padding: 0 20px;
 }

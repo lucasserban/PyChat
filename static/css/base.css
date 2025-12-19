@@ -15,8 +15,6 @@ body {
     background-repeat: no-repeat;
     min-height: 100vh;
     background-attachment: fixed;
-    overflow: hidden;
-    height: 100%;
 }
 
 .nav {
@@ -66,4 +64,12 @@ body {
     font-weight: 700;
     color: #ffffff;
     text-decoration: none;
+}
+
+.site-footer {
+    text-align: center;
+    margin-top: 4rem;
+    padding: 2rem;
+    color: var(--muted);
+    font-size: 0.9em;
 }

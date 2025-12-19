@@ -20,8 +20,6 @@ body {
     background-repeat: no-repeat;
     min-height: 100vh;
     background-attachment: fixed;
-    overflow: hidden;
-    height: 100%;
 }
 
 /* --- HEADER --- */
