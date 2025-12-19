@@ -11,6 +11,10 @@
     --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 
+.site-header {
+    display: none;
+}
+
 body {
     background: radial-gradient(1200px 600px at 10% -10%, #1f2937 0%, var(--bg) 50%, #0b1020 100%);
     color: var(--text);
