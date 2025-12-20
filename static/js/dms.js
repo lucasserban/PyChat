@@ -1,9 +1,11 @@
+// initializes a socket and the DOM elements
 const socket = io();
 const chatContainer = document.getElementById('dm-history');
 const msgInput = document.getElementById('dm-input');
 const sendBtn = document.getElementById('dm-send-btn');
 const imageInput = document.getElementById('dm-image-input');
 
+// closes all open message menus except the one passed as argument
 function closeAllMenus(exceptMenu) {
     document.querySelectorAll('.msg-menu').forEach(menu => {
         if (menu !== exceptMenu) {
@@ -12,45 +14,58 @@ function closeAllMenus(exceptMenu) {
     });
 }
 
+// global click listener to handle menu toggles and closing menus when clicking outside
 document.addEventListener('click', (e) => {
+    // handles opening the menu (3 dots button)
     const toggleBtn = e.target.closest('.msg-menu-btn');
     if (toggleBtn) {
         e.stopPropagation();
+
         const menu = toggleBtn.parentElement.querySelector('.msg-menu');
         const isOpen = menu.classList.contains('open');
         closeAllMenus(menu);
         if (!isOpen) {
             menu.classList.add('open');
         }
+
         return;
     }
 
+    // handles the Edit button click
     const editBtn = e.target.closest('.msg-menu-edit');
     if (editBtn) {
         e.stopPropagation();
+
         const messageId = editBtn.getAttribute('data-msg-id');
         handleEditMessage(messageId);
         closeAllMenus(null);
+
         return;
     }
 
+    // handles the Delete button click
     const deleteBtn = e.target.closest('.msg-menu-delete');
     if (deleteBtn) {
         e.stopPropagation();
+
         const messageId = deleteBtn.getAttribute('data-msg-id');
         handleDeleteMessage(messageId);
         closeAllMenus(null);
+
         return;
     }
 
+    // closes all menus if clicked elsewhere
     closeAllMenus(null);
 });
 
+// creates the DOM structure for the message options menu
 function createMenuElement(messageId) {
     const wrapper = document.createElement('div');
     wrapper.className = 'msg-menu-wrapper';
     wrapper.setAttribute('data-msg-id', messageId);
 
+    // the 'three dots' button
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'msg-menu-btn';
@@ -59,6 +74,7 @@ function createMenuElement(messageId) {
     const menu = document.createElement('div');
     menu.className = 'msg-menu';
 
+    // Edit Button
     const editBtn = document.createElement('button');
     editBtn.className = 'msg-menu-edit';
     editBtn.textContent = 'Edit';
@@ -68,6 +84,7 @@ function createMenuElement(messageId) {
         closeAllMenus(null);
     };
 
+    // Delete Button
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'msg-menu-delete';
     deleteBtn.textContent = 'Delete';
@@ -80,6 +97,7 @@ function createMenuElement(messageId) {
     menu.appendChild(editBtn);
     menu.appendChild(deleteBtn);
 
+    // toggles logic for the button
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isOpen = menu.classList.contains('open');
@@ -94,46 +112,39 @@ function createMenuElement(messageId) {
     return wrapper;
 }
 
+// replaces the message text with a textarea for editing
 function handleEditMessage(messageId) {
     const bubble = document.querySelector(`.msg-bubble[data-msg-id="${messageId}"]`);
     if (!bubble) return;
 
-    // Prevent multiple edit boxes
-    if (bubble.querySelector('.edit-container')) return;
+	// prevents multiple edit boxes
+    if (bubble.querySelector('.edit-container')) return; 
 
     const textDiv = bubble.querySelector('.msg-text');
     const currentText = textDiv ? textDiv.innerText : '';
 
-    // Hide original text
+    // hides original text while editing
     if (textDiv) textDiv.style.display = 'none';
 
-    // Create edit container
+    // creates container and textarea
     const editContainer = document.createElement('div');
     editContainer.className = 'edit-container';
     editContainer.style.marginTop = '8px';
 
-    // Textarea
     const textarea = document.createElement('textarea');
     textarea.value = currentText;
     textarea.style.width = '100%';
-    textarea.style.boxSizing = 'border-box';
-    textarea.style.minHeight = '60px';
-    textarea.style.borderRadius = '8px';
-    textarea.style.padding = '8px';
     textarea.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
     textarea.style.color = '#fff';
     textarea.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-    textarea.style.outline = 'none';
-    textarea.style.resize = 'vertical';
-    textarea.style.fontFamily = 'inherit';
 
-    // Auto-focus
+    // auto-focus logic
     setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }, 0);
 
-    // Buttons
+    // creates Save/Cancel buttons
     const btnRow = document.createElement('div');
     btnRow.style.display = 'flex';
     btnRow.style.justifyContent = 'flex-end';
@@ -142,11 +153,6 @@ function handleEditMessage(messageId) {
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.background = 'transparent';
-    cancelBtn.style.border = 'none';
-    cancelBtn.style.color = '#aaa';
-    cancelBtn.style.cursor = 'pointer';
-    cancelBtn.style.fontSize = '0.9em';
     cancelBtn.onclick = () => {
         editContainer.remove();
         if (textDiv) textDiv.style.display = 'block';
@@ -154,21 +160,15 @@ function handleEditMessage(messageId) {
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.style.background = '#3b82f6';
-    saveBtn.style.border = 'none';
-    saveBtn.style.borderRadius = '6px';
-    saveBtn.style.padding = '4px 12px';
-    saveBtn.style.color = 'white';
-    saveBtn.style.cursor = 'pointer';
-    saveBtn.style.fontSize = '0.9em';
     saveBtn.onclick = () => {
         const val = textarea.value.trim();
         if (val) {
+            // emits the edit event to the server
             socket.emit('edit_message', { message_id: messageId, content: val });
         }
     };
     
-    // Enter to save, Shift+Enter for newline, Escape to cancel
+    // adds keyboard shortcuts: Enter to save, Escape to cancel
     textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -185,7 +185,7 @@ function handleEditMessage(messageId) {
     editContainer.appendChild(textarea);
     editContainer.appendChild(btnRow);
 
-    // Insert into bubble
+    // inserts edit container into DOM
     if (textDiv) {
         textDiv.parentNode.insertBefore(editContainer, textDiv.nextSibling);
     } else {
@@ -193,16 +193,17 @@ function handleEditMessage(messageId) {
     }
 }
 
+// emits a delete request to the server after confirmation
 function handleDeleteMessage(messageId) {
     if (!confirm('Delete this message?')) return;
     socket.emit('delete_message', { message_id: messageId });
 }
 
+// updates the DOM with the new message content after a successful edit
 function applyMessageUpdate(messageId, newContent) {
     const bubble = document.querySelector(`.msg-bubble[data-msg-id="${messageId}"]`);
     if (!bubble) return;
     
-    // Remove edit container if open
     const editContainer = bubble.querySelector('.edit-container');
     if (editContainer) editContainer.remove();
 
@@ -214,26 +215,30 @@ function applyMessageUpdate(messageId, newContent) {
         bubble.insertBefore(textDiv, reactions || bubble.firstChild);
     }
     
-    textDiv.style.display = 'block';
+	textDiv.style.display = 'block';
     textDiv.innerText = newContent;
 }
 
+// removes the message row from the DOM after a successful delete
 function applyMessageDelete(messageId) {
     const bubble = document.querySelector(`.msg-bubble[data-msg-id="${messageId}"]`);
     if (!bubble) return;
+
     const row = bubble.closest('.msg-row');
     if (row && row.parentNode) {
         row.parentNode.removeChild(row);
     }
 }
 
-// Scroll to bottom on load
-if(chatContainer) {
+// auto-scroll to bottom on load
+if (chatContainer) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+// Socket Event Listeners
+
 socket.on('connect', () => {
-    // Join the DM room
+    // joins the specific DM room based on recipient and username
     if (window.activeRecipient) {
         socket.emit('join_dm', { 
             recipient: window.activeRecipient,
@@ -242,10 +247,12 @@ socket.on('connect', () => {
     }
 });
 
-// --- REACTION LOGIC (Same as index.js) ---
+// Reactions Logic
+
 window.sendReaction = function(arg1, arg2) {
     let messageId, emoji;
 
+    // handles being called from an event listener or directly
     if (arg1 && typeof arg1.getAttribute === 'function') {
         messageId = arg1.getAttribute('data-id');
         emoji = arg1.getAttribute('data-emoji');
@@ -263,12 +270,12 @@ window.sendReaction = function(arg1, arg2) {
     }
 };
 
-// Listen for updates (Works for both Global and DM rooms now)
+// updates reaction counts/state when notified by the server
 socket.on('update_message_reactions', data => {
     const msgId = data.message_id;
     const reactions = data.reactions; 
-    
     const reactionList = document.getElementById(`reactions-${msgId}`);
+
     if (reactionList) {
         let html = '';
         reactions.forEach(r => {
@@ -284,45 +291,40 @@ socket.on('update_message_reactions', data => {
     }
 });
 
-// --- NEW APPEND MESSAGE FUNCTION ---
+// appends a new message to the chat container
 function appendMessage(data, isSentByMe) {
     if (!chatContainer) return;
     
-    // 1. Creăm rândul (Row)
     const rowDiv = document.createElement('div');
     rowDiv.className = isSentByMe ? 'msg-row sent' : 'msg-row received';
 
-    // HTML pentru butonul de reacție
+    // the reaction picker UI
     const reactionPickerHTML = `
         <div class="reaction-picker-wrapper">
             <button class="add-reaction-btn">☺</button>
             <div class="reaction-menu">
                 <span onclick="sendReaction(this)" data-id="${data.id || ''}" data-emoji="👍">👍</span>
-                <span onclick="sendReaction(this)" data-id="${data.id || ''}" data-emoji="❤️">❤️</span>
-                <span onclick="sendReaction(this)" data-id="${data.id || ''}" data-emoji="😂">😂</span>
-                <span onclick="sendReaction(this)" data-id="${data.id || ''}" data-emoji="😮">😮</span>
-                <span onclick="sendReaction(this)" data-id="${data.id || ''}" data-emoji="😢">😢</span>
                 <span onclick="sendReaction(this)" data-id="${data.id || ''}" data-emoji="😡">😡</span>
             </div>
         </div>
     `;
 
-    // 2. Dacă e mesajul MEU, punem menu + picker ÎNAINTE
+    // adds options menu to sent messages
     if (isSentByMe && data.id) {
         const menu = createMenuElement(data.id);
         rowDiv.appendChild(menu);
         
+        // adds reaction picker to sent messages
         const temp = document.createElement('div');
         temp.innerHTML = reactionPickerHTML;
         rowDiv.appendChild(temp.firstElementChild);
     }
 
-    // 3. Construim Bula
     const bubbleDiv = document.createElement('div');
     bubbleDiv.className = isSentByMe ? 'msg-bubble msg-sent' : 'msg-bubble msg-received';
     if(data.id) bubbleDiv.setAttribute('data-msg-id', data.id);
 
-    // Imagine
+    // handles image content
     if (data.image) {
         const img = document.createElement('img');
         if (data.image.startsWith('data:')) {
@@ -334,7 +336,7 @@ function appendMessage(data, isSentByMe) {
         bubbleDiv.appendChild(img);
     }
 
-    // Text
+    // handles text content
     if (data.msg) {
         const textDiv = document.createElement('div');
         textDiv.className = 'msg-text';
@@ -342,18 +344,20 @@ function appendMessage(data, isSentByMe) {
         bubbleDiv.appendChild(textDiv);
     }
 
-    // Container Reacții (gol inițial pentru mesaje noi)
+    // prepares reactions container
     if (data.id) {
         const reactDiv = document.createElement('div');
         reactDiv.className = 'msg-reactions';
+
         const listDiv = document.createElement('div');
         listDiv.className = 'reaction-list';
         listDiv.id = `reactions-${data.id}`;
+
         reactDiv.appendChild(listDiv);
         bubbleDiv.appendChild(reactDiv);
     }
 
-    // Oră
+    // adds timestamp
     if (data.timestamp) {
         const timeDiv = document.createElement('div');
         timeDiv.className = 'msg-time';
@@ -363,21 +367,21 @@ function appendMessage(data, isSentByMe) {
 
     rowDiv.appendChild(bubbleDiv);
 
-    // 4. Dacă e mesajul LOR, punem picker + menu DUPĂ
+    // adds reaction picker to received messages
     if (!isSentByMe && data.id) {
         const temp = document.createElement('div');
         temp.innerHTML = reactionPickerHTML;
-        rowDiv.appendChild(temp.firstElementChild);
-        
-        // REMOVED MENU CREATION FROM HERE
+        rowDiv.appendChild(temp.firstElementChild);        
     }
     
     chatContainer.appendChild(rowDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Listen for incoming private messages
+// Core Socket Listeners
+
 socket.on('receive_private_message', data => {
+    // only displays message if it belongs to the active conversation
     if (data.sender === window.activeRecipient || data.sender === window.currentUser) {
         const isMe = data.sender === window.currentUser;
         
@@ -400,6 +404,8 @@ socket.on('message_deleted', data => {
     applyMessageDelete(data.message_id);
 });
 
+// Message Sending Logic
+
 function sendMessage() {
     if (!msgInput || !window.activeRecipient) return;
     const msg = msgInput.value.trim();
@@ -413,6 +419,8 @@ function sendMessage() {
     msgInput.value = '';
     msgInput.style.height = '50px'; 
 }
+
+// Image Upload Logic
 
 if (imageInput) {
     imageInput.addEventListener('change', function() {
@@ -435,6 +443,7 @@ if (imageInput) {
     });
 }
 
+// binds Send button and Enter key
 if (sendBtn) {
     sendBtn.addEventListener('click', sendMessage);
     msgInput.addEventListener('keydown', e => { 
