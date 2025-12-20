@@ -153,7 +153,7 @@ function handleEditMessage(messageId) {
     };
 
     const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Edit';
+    saveBtn.textContent = 'Save';
     saveBtn.style.background = '#3b82f6';
     saveBtn.style.border = 'none';
     saveBtn.style.borderRadius = '6px';
@@ -293,9 +293,6 @@ function appendMessage(data, isSentByMe) {
     rowDiv.className = isSentByMe ? 'msg-row sent' : 'msg-row received';
 
     // HTML pentru butonul de reacție
-    // Notă: `data.id` ar putea lipsi la mesajele trimise instant de mine înainte de reload, 
-    // dar serverul ar trebui să trimită ID-ul înapoi în 'receive_private_message' dacă modificăm socket-ul.
-    // Pentru simplitate, presupunem că ID-ul vine sau butonul nu funcționează până la refresh dacă nu e ID.
     const reactionPickerHTML = `
         <div class="reaction-picker-wrapper">
             <button class="add-reaction-btn">☺</button>
@@ -372,8 +369,7 @@ function appendMessage(data, isSentByMe) {
         temp.innerHTML = reactionPickerHTML;
         rowDiv.appendChild(temp.firstElementChild);
         
-        const menu = createMenuElement(data.id);
-        rowDiv.appendChild(menu);
+        // REMOVED MENU CREATION FROM HERE
     }
     
     chatContainer.appendChild(rowDiv);
@@ -385,13 +381,8 @@ socket.on('receive_private_message', data => {
     if (data.sender === window.activeRecipient || data.sender === window.currentUser) {
         const isMe = data.sender === window.currentUser;
         
-        // Notă: Pentru ca reacțiile să meargă pe mesaje noi fără refresh,
-        // trebuie să asigurăm că serverul trimite 'id'-ul mesajului în 'receive_private_message'.
-        // Momentan 'app.py' nu trimite ID-ul la 'receive_private_message' (vezi codul original),
-        // dar am lăsat logica aici pentru când vei adăuga 'id': new_msg.id în backend.
-        
         appendMessage({
-            id: data.id, // Trebuie adăugat în app.py la emit('receive_private_message')
+            id: data.id, 
             msg: data.msg,
             image: data.image,
             timestamp: data.timestamp

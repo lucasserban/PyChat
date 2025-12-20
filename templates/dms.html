@@ -79,13 +79,7 @@
                                     <span onclick="sendReaction(this)" data-id="{{ msg.id }}" data-emoji="😡">😡</span>
                                 </div>
                             </div>
-                            <div class="msg-menu-wrapper" data-msg-id="{{ msg.id }}">
-                                <button class="msg-menu-btn" type="button">⋮</button>
-                                <div class="msg-menu">
-                                    <button class="msg-menu-edit" type="button" data-msg-id="{{ msg.id }}">Edit</button>
-                                    <button class="msg-menu-delete" type="button" data-msg-id="{{ msg.id }}">Delete</button>
-                                </div>
-                            </div>
+                            {# Removed msg-menu-wrapper from here #}
                         {% endif %}
 
                     </div>

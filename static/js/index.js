@@ -446,8 +446,7 @@ function appendMessage(data) {
         tempDiv.innerHTML = reactionPickerHTML;
         rowDiv.appendChild(tempDiv.firstElementChild);
         
-        const menu = createMenuElement(data.id);
-        rowDiv.appendChild(menu);
+        // REMOVED MENU CREATION FROM HERE
     }
     
     // Adăugăm tot rândul în chat
