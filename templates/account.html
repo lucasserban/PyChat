@@ -1,101 +1,120 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}" />
+  <!-- Account settings page styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}" />
 {% endblock %}
 
 {% block content %}
-    <div class="account-container">
-        
-        <form method="POST" enctype="multipart/form-data" class="account-form">
+  <!-- Main container split into left (profile editor) and right (friend requests) -->
+  <div class="account-container">
+    <!-- Left side: Profile editing form -->
+    <form method="POST" enctype="multipart/form-data" class="account-form">
 
-            <div class="profile-header">
-                <div class="profile-avatar-wrapper">
-                    <label for="profile_pic_input" class="avatar-label">
-                        
-                        <div id="avatar-display-area">
-                            {% if user.profile_pic %}
-                                <img src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}" alt="Avatar" class="profile-avatar-img" id="avatar-preview">
-                            {% else %}
-                                <div class="profile-avatar" id="avatar-placeholder">
-                                    {{ user.username[0].upper() }}
-                                </div>
-                                <img src="" alt="Preview" class="profile-avatar-img" id="avatar-preview-hidden" style="display:none;">
-                            {% endif %}
-                        </div>
-
-                        <div class="avatar-overlay">
-                            <span class="plus-icon">+</span>
-                        </div>
-                    </label>
-                </div>
-                <h2>{{ user.username }}</h2>
-            </div>
-
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul class="flashes">
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
-            {% endwith %}
-
-            <input type="file" id="profile_pic_input" name="profile_pic" accept=".png, .jpg, .jpeg, .gif" style="display: none;">
-
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" name="email" value="{{ user.email or '' }}" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Bio</label>
-                <textarea name="bio" rows="3">{{ user.bio or '' }}</textarea>
-            </div>
-            
-            <button type="submit" class="save-btn">Save Changes</button>
-        </form>
-
-
-    </form> <div class="pending-panel">
-            <h3>Pending Friend Requests</h3>
-            
-            {% if pending_requests %}
-                <div class="requests-list">
-                    {% for req in pending_requests %}
-                        <div class="request-item">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                {% if req.sender.profile_pic %}
-                                    <img src="{{ url_for('static', filename='profile_pics/' + req.sender.profile_pic) }}" 
-                                         style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
-                                {% else %}
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">
-                                        {{ req.sender.username[0].upper() }}
-                                    </div>
-                                {% endif %}
-                                <span>{{ req.sender.username }}</span>
-                            </div>
-                            
-                            <div style="display: flex; gap: 8px;">
-                                <a href="{{ url_for('accept_request', request_id=req.id) }}" 
-                                   class="req-btn accept-btn">Accept</a>
-                                <a href="{{ url_for('reject_request', request_id=req.id) }}" 
-                                   class="req-btn decline-btn">Decline</a>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
+      <!-- Profile header with avatar and username -->
+      <div class="profile-header">
+        <div class="profile-avatar-wrapper">
+          <!-- Clickable avatar area - hover shows a plus icon to upload new picture -->
+          <label for="profile_pic_input" class="avatar-label">
+            <div id="avatar-display-area">
+              {% if user.profile_pic %}
+                <!-- Show current profile picture -->
+                <img src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}" alt="Avatar" class="profile-avatar-img" id="avatar-preview">
             {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">📭</div>
-                    <p>There are no pending friend requests.</p>
+                <!-- If no picture, show first letter of username -->
+                <div class="profile-avatar" id="avatar-placeholder">
+                  {{ user.username[0].upper() }}
                 </div>
-            {% endif %}
+                <!-- Hidden preview image for when user selects a new picture -->
+                <img src="" alt="Preview" class="profile-avatar-img" id="avatar-preview-hidden" style="display:none;">
+              {% endif %}
+            </div>
+
+            <!-- Overlay with plus icon appears on hover -->
+            <div class="avatar-overlay">
+              <span class="plus-icon">+</span>
+            </div>
+          </label>
         </div>
+        <h2>{{ user.username }}</h2>
+      </div>
+
+      <!-- Display success or error messages from the server -->
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+      {% endwith %}
+
+      <!-- Hidden file input triggered by clicking the avatar -->
+      <input type="file" id="profile_pic_input" name="profile_pic" accept=".png, .jpg, .jpeg, .gif" style="display: none;">
+
+      <!-- Email field (required) -->
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ user.email or '' }}" required>
+      </div>
+      
+      <!-- Bio field (optional) -->
+      <div class="form-group">
+        <label>Bio</label>
+        <textarea name="bio" rows="3">{{ user.bio or '' }}</textarea>
+      </div>
+      
+      <!-- Save button to update profile -->
+      <button type="submit" class="save-btn">Save Changes</button>
+    </form>
+
+
+</form> <!-- Right side: Pending friend requests panel -->
+<div class="pending-panel">
+        <h3>Pending Friend Requests</h3>
+        
+        {% if pending_requests %}
+            <!-- List of incoming friend requests -->
+            <div class="requests-list">
+                {% for req in pending_requests %}
+                    <div class="request-item">
+                        <!-- Sender's profile info -->
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            {% if req.sender.profile_pic %}
+                                <img src="{{ url_for('static', filename='profile_pics/' + req.sender.profile_pic) }}" 
+                                      style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                                <!-- Fallback to first letter if no profile pic -->
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">
+                                    {{ req.sender.username[0].upper() }}
+                                </div>
+                            {% endif %}
+                            <span>{{ req.sender.username }}</span>
+                        </div>
+                        
+                        <!-- Accept/Decline action buttons -->
+                        <div style="display: flex; gap: 8px;">
+                            <a href="{{ url_for('accept_request', request_id=req.id) }}" 
+                                class="req-btn accept-btn">Accept</a>
+                            <a href="{{ url_for('reject_request', request_id=req.id) }}" 
+                                class="req-btn decline-btn">Decline</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty state when no pending requests -->
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <p>There are no pending friend requests.</p>
+            </div>
+        {% endif %}
     </div>
+  </div>
 {% endblock %}
 
 {% block script %}
+    <!-- Script handles avatar image preview when selecting new picture -->
     <script src="{{ url_for('static', filename='js/account.js') }}"></script>
 {% endblock %}

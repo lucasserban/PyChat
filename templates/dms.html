@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 
 {% block head %}
+    <!-- Direct messages page specific styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dms.css') }}" />
 {% endblock %}
 
 {% block content %}
+<!-- Main DM container split into right (friends list) and left (chat area) -->
 <div class="dm-container">
     
+    <!-- Left side: Active chat conversation area -->
     <div class="dm-chat-area">
         {% if active_recipient %}
+            <!-- Chat header showing who you're talking to -->
             <div class="chat-header">
                 Chatting with 
                 <a href="{{ url_for('profile', username=active_recipient) }}" class="header-profile-link">
@@ -16,11 +20,14 @@
                 </a>
             </div>
             
+            <!-- Scrollable message history area -->
             <div id="dm-history" class="chat-messages">
                 {% for msg in history %}
+                    <!-- Each message row -->
                     <div class="msg-row {{ 'sent' if msg.sender_username == session['username'] else 'received' }}">
                         
                         {% if msg.sender_username == session['username'] %}
+                            <!-- For your messages: show edit/delete menu and reaction picker on the left -->
                             <div class="msg-menu-wrapper" data-msg-id="{{ msg.id }}">
                                 <button class="msg-menu-btn" type="button">⋮</button>
                                 <div class="msg-menu">
@@ -28,6 +35,7 @@
                                     <button class="msg-menu-delete" type="button" data-msg-id="{{ msg.id }}">Delete</button>
                                 </div>
                             </div>
+                            <!-- Emoji reaction picker -->
                             <div class="reaction-picker-wrapper">
                                 <button class="add-reaction-btn">☺</button>
                                 <div class="reaction-menu">
@@ -41,19 +49,24 @@
                             </div>
                         {% endif %}
 
+                        <!-- The message bubble containing images, text, reactions, and timestamp -->
                         <div class="msg-bubble {{ 'msg-sent' if msg.sender_username == session['username'] else 'msg-received' }}" data-msg-id="{{ msg.id }}">
 
                             {% if msg.image_filename %}
+                                <!-- Display uploaded image if present -->
                                 <img src="{{ url_for('static', filename='chat_uploads/' + msg.image_filename) }}" class="chat-image">
                             {% endif %}
 
                             {% if msg.content %}
+                                <!-- The text content of the message -->
                                 <div class="msg-text">{{ msg.content }}</div>
                             {% endif %}
                             
+                            <!-- Reaction section showing emoji reactions -->
                             <div class="msg-reactions">
                                 <div class="reaction-list" id="reactions-{{ msg.id }}">
                                     {% for r in msg.reactions %}
+                                        <!-- Each reaction with emoji, count, and highlight if you reacted -->
                                         <span class="reaction-tag {{ 'active' if r.user_has_reacted else '' }}" 
                                               onclick="sendReaction(this)"
                                               data-id="{{ msg.id }}"
@@ -64,6 +77,7 @@
                                 </div>
                             </div>
                         
+                            <!-- Message timestamp -->
                             <div class="msg-time">{{ msg.timestamp }}</div>
                         </div>
 
@@ -86,67 +100,81 @@
                 {% endfor %}
             </div>
 
+            <!-- Message input area at the bottom of chat -->
             <div class="chat-input-area">
+                <!-- Camera icon for uploading images -->
                 <label for="dm-image-input" class="upload-btn">📷</label>
                 <input type="file" id="dm-image-input" accept="image/*" style="display: none;">
 
+                <!-- Text input for typing messages -->
                 <textarea id="dm-input" placeholder="Message @{{ active_recipient }}..." rows="1"></textarea>
                 <button id="dm-send-btn">Send</button>
             </div>
         {% else %}
+            <!-- Empty state when no friend is selected -->
             <div class="empty-state">Select a user to start chatting</div>
         {% endif %}
     </div>
 
+<!-- Right sidebar: Friends list and search -->
 <div class="dm-sidebar">
-    <div class="sidebar-header">Friends</div>
-    <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-        <form method="POST" style="display:flex; gap:5px;">
-            <input type="text" name="search_username" placeholder="Find user..." 
-                   style="width: 100%; padding: 6px; border-radius: 6px; border:none; outline:none; background: rgba(0,0,0,0.3); color:white;">
-            <button type="submit" style="background:var(--primary); border:none; color:white; border-radius:6px; cursor:pointer;">🔍</button>
-        </form>
-    </div>
+  <div class="sidebar-header">Friends</div>
+  <!-- Search bar to find users by username -->
+  <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+    <form method="POST" style="display:flex; gap:5px;">
+      <input type="text" name="search_username" placeholder="Find user..." 
+        style="width: 100%; padding: 6px; border-radius: 6px; border:none; outline:none; background: rgba(0,0,0,0.3); color:white;">
+      <button type="submit" style="background:var(--primary); border:none; color:white; border-radius:6px; cursor:pointer;">🔍</button>
+  </form>
+  </div>
 
-    <div class="user-list">
-        {% if search_results %}
-            <div style="padding: 10px; font-size: 0.9em; color: var(--muted);">Search Results:</div>
-            {% for u in search_results %}
-                <div class="user-card" style="display: flex; justify-content: space-between; align-items: center; cursor: default;">
-                    <span>@{{ u.username }}</span>
-                    <a href="{{ url_for('send_request', username=u.username) }}" 
-                       style="background: var(--primary); padding: 2px 8px; border-radius: 4px; color: white; text-decoration: none; font-size: 0.8em;">
-                       Add
-                    </a>
-                </div>
-            {% endfor %}
-            <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
-        {% endif %}
+  <!-- List of friends and search results -->
+  <div class="user-list">
+    {% if search_results %}
+      <!-- Display search results if user performed a search -->
+      <div style="padding: 10px; font-size: 0.9em; color: var(--muted);">Search Results:</div>
+      {% for u in search_results %}
+        <div class="user-card" style="display: flex; justify-content: space-between; align-items: center; cursor: default;">
+          <span>@{{ u.username }}</span>
+          <!-- Add friend button for users not on your friends list -->
+          <a href="{{ url_for('send_request', username=u.username) }}" 
+            style="background: var(--primary); padding: 2px 8px; border-radius: 4px; color: white; text-decoration: none; font-size: 0.8em;">
+            Add
+          </a>
+        </div>
+      {% endfor %}
+      <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+    {% endif %}
 
-        {% for u in users_list %}
-            <a href="{{ url_for('dms', username=u.username) }}" 
-               class="user-card {{ 'active' if active_recipient == u.username else '' }}">
-                @{{ u.username }}
-            </a>
-        {% else %}
-            {% if not search_results %}
-                <div style="padding: 20px; text-align: center; color: var(--muted); font-size: 0.9em;">
-                    No friends yet.<br>Search above to add some!
-                </div>
-            {% endif %}
-        {% endfor %}
-    </div>
+    {% for u in users_list %}
+      <!-- List of your friends - click to start chatting -->
+      <a href="{{ url_for('dms', username=u.username) }}" 
+        class="user-card {{ 'active' if active_recipient == u.username else '' }}">
+        @{{ u.username }}
+      </a>
+    {% else %}
+      {% if not search_results %}
+        <!-- Empty state when you have no friends yet -->
+        <div style="padding: 20px; text-align: center; color: var(--muted); font-size: 0.9em;">
+          No friends yet.<br>Search above to add some!
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
 </div>
 
 </div>
 
 <script>
+    // Make current user and active chat recipient available to JavaScript
     window.currentUser = "{{ session['username'] }}";
     window.activeRecipient = "{{ active_recipient if active_recipient else '' }}";
 </script>
 {% endblock %}
 
 {% block script %}
+    <!-- Socket.IO for real-time DM functionality -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- DM-specific JavaScript: sending/receiving messages, reactions, edit/delete -->
     <script src="{{ url_for('static', filename='js/dms.js') }}"></script>
 {% endblock %}

@@ -1,53 +1,65 @@
 {% extends "base.html" %}
 
 {% block head %}
+    <!-- Profile page specific styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}" />
 {% endblock %}
 
 {% block content %}
 <div class="profile-container">
-    <div class="profile-avatar-wrapper">
-        {% if user.profile_pic %}
-            <img src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}" alt="{{ user.username }}" class="profile-avatar-img">
-        {% else %}
-            <div class="profile-avatar">
-                {{ user.username[0].upper() }}
-            </div>
-        {% endif %}
-    </div>
+  <!-- Display user's profile picture or first letter as fallback -->
+  <div class="profile-avatar-wrapper">
+    {% if user.profile_pic %}
+      <img src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}" alt="{{ user.username }}" class="profile-avatar-img">
+    {% else %}
+      <!-- If no profile pic, show the first letter of their username -->
+      <div class="profile-avatar">
+          {{ user.username[0].upper() }}
+      </div>
+    {% endif %}
+  </div>
 
-    <h2>{{ user.username }}</h2>
+  <!-- Username as the main heading -->
+  <h2>{{ user.username }}</h2>
+  
+  <!-- User's email and bio information -->
+  <div class="profile-details">
+    {% if user.email %}
+      <p><strong>Email:</strong> {{ user.email }}</p>
+    {% endif %}
     
-    <div class="profile-details">
-        {% if user.email %}
-            <p><strong>Email:</strong> {{ user.email }}</p>
-        {% endif %}
-        
-        <p><strong>Bio:</strong> {{ user.bio if user.bio else "This user hasn't written a bio yet." }}</p>
-    </div>
+    <p><strong>Bio:</strong> {{ user.bio if user.bio else "This user hasn't written a bio yet." }}</p>
+  </div>
 
-    <div class="profile-actions">
-        
-        {% if friendship_status == 'self' %}
-            <a href="{{ url_for('account') }}" class="btn btn-dm">Edit Profile</a>
+  <!-- Action buttons change based on your relationship with this user -->
+  <div class="profile-actions">
+      
+    {% if friendship_status == 'self' %}
+      <!-- If viewing your own profile, show edit button -->
+      <a href="{{ url_for('account') }}" class="btn btn-dm">Edit Profile</a>
 
-        {% elif friendship_status == 'friends' %}
-            <a href="{{ url_for('dms', username=user.username) }}" class="btn btn-dm">Message</a>
+    {% elif friendship_status == 'friends' %}
+      <!-- If you're friends, show message button to start DM -->
+      <a href="{{ url_for('dms', username=user.username) }}" class="btn btn-dm">Message</a>
 
-        {% elif friendship_status == 'pending_sent' %}
-            <button class="btn btn-back" disabled style="opacity: 0.7; cursor: default; background: rgba(255,255,255,0.05);">
-                Request Pending
-            </button>
+    {% elif friendship_status == 'pending_sent' %}
+      <!-- If you already sent a friend request, show disabled pending button -->
+      <button class="btn btn-back" disabled style="opacity: 0.7; cursor: default; background: rgba(255,255,255,0.05);">
+          Request Pending
+      </button>
 
-        {% elif friendship_status == 'pending_received' %}
-            <a href="{{ url_for('account') }}" class="btn btn-dm">Respond to Request</a>
+    {% elif friendship_status == 'pending_received' %}
+      <!-- If they sent you a request, direct to account page to respond -->
+      <a href="{{ url_for('account') }}" class="btn btn-dm">Respond to Request</a>
 
-        {% else %}
-            <a href="{{ url_for('send_request', username=user.username) }}" class="btn btn-dm">Add Friend</a>
+    {% else %}
+      <!-- If not friends yet, show add friend button -->
+      <a href="{{ url_for('send_request', username=user.username) }}" class="btn btn-dm">Add Friend</a>
 
-        {% endif %}
+    {% endif %}
 
-        <a href="javascript:history.back()" class="btn btn-back">Back</a>
-    </div>
+    <!-- Back button to return to previous page -->
+    <a href="javascript:history.back()" class="btn btn-back">Back</a>
+  </div>
 </div>
 {% endblock %}

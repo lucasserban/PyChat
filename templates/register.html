@@ -1,38 +1,49 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Registration page specific styles -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}" />
 <div class="register-container">
     <h1>Register</h1>
     
+    <!-- Registration form with file upload for profile picture -->
     <form method="POST" enctype="multipart/form-data">
+        <!-- Profile picture upload area with hover effect showing a plus icon -->
         <div class="register-avatar-wrapper">
             <label for="register-file-input" class="avatar-label">
                 <div id="avatar-display-area">
+                    <!-- Default avatar icon before any image is selected -->
                     <div class="register-avatar" id="register-placeholder">
                         👤
                     </div>
+                    <!-- Hidden preview image that shows up after selecting a file -->
                     <img src="" alt="Preview" class="register-avatar-img" id="register-preview" style="display:none;">
                 </div>
+                <!-- Overlay with plus icon appears on hover -->
                 <div class="avatar-overlay">
                     <span class="plus-icon">+</span>
                 </div>
             </label>
         </div>
 
+        <!-- Hidden file input that triggers when you click the avatar circle -->
         <input type="file" id="register-file-input" name="profile_pic" accept=".png, .jpg, .jpeg, .gif" style="display: none;">
 
+        <!-- Basic account information fields -->
         <input type="text" name="username" placeholder="Username" required autofocus value="{{ request.form.get('username', '') }}">
         <input type="email" name="email" placeholder="Email" required value="{{ request.form.get('email', '') }}">
         <input type="password" name="password" placeholder="Password" required>
         
+        <!-- Optional bio field for users to introduce themselves -->
         <textarea name="bio" placeholder="Tell us about yourself (Bio)" rows="3" 
             style="width: 93%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: rgba(3, 6, 23, 0.55); color: #e5e7eb; outline: none; font-family: inherit; resize: none; margin-bottom: 12px;"></textarea>
 
         <button type="submit">Register</button>
     </form>
     
+    <!-- Link back to login for existing users -->
     <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a>.</p>
+    <!-- Show validation errors or other messages from the server -->
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <ul class="flashes">
@@ -46,5 +57,6 @@
 {% endblock %}
 
 {% block script %}
+    <!-- Script handles image preview and navigation cleanup -->
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}

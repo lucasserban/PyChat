@@ -1,15 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Login page specific styles -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}" />
 <div class="login-container">
     <h1>Login</h1>
+    <!-- Login form - sends username and password to server -->
     <form method="POST">
         <input type="text" name="username" placeholder="Username" required autofocus>
         <input type="password" name="password" placeholder="Password" required>
         <button type="submit">Log In</button>
     </form>
+    <!-- Link to registration page for new users -->
     <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
+    <!-- Display error messages from the server (like invalid credentials) -->
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <ul class="flashes">
@@ -23,5 +27,6 @@
 {% endblock %}
 
 {% block script %}
+    <!-- Auth script handles navigation cleanup for login/register pages -->
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}

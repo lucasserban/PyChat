@@ -3,19 +3,24 @@
  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Base CSS applied to all pages -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.png') }}" />
     <title>Pychat</title>
+    <!-- Child templates can add extra CSS/scripts in the head section -->
     {% block head %} 
     {% endblock %}
   </head>
   <body>
+    <!-- Top navigation bar with logo and main links -->
     <header class="site-header">
       <nav class="nav">
         <div class="nav-left">
+          <!-- Brand logo - clicking takes you to the global chat -->
           <a class="brand" href="{{ url_for('index') }}">PyChat</a>
         </div>
         <div class="nav-right">
+          <!-- Main navigation links visible to logged-in users -->
           <a class="nav-link" href="{{ url_for('account')}}">My Account</a>
           <a class="nav-link" href="{{ url_for('index') }}">Global Chat</a>
           <a class="nav-link" href="{{ url_for('dms') }}">Direct Messages</a>
@@ -24,13 +29,16 @@
       </nav>
     </header>
 
+    <!-- Main page content goes here - each page template fills this block -->
     {% block content %}
     {% endblock %}
 
+    <!-- Footer at the bottom of every page -->
     <footer class="site-footer">
       <p>© 2025 Project IA4. PyChat</p>
     </footer>
 
+    <!-- JavaScript section - child templates can add scripts here -->
     {% block script %}
     {% endblock %}
 
