@@ -42,6 +42,7 @@ COOLDOWN_SECONDS = 10  # Per-user throttle for global chat posts
 _last_global_message_at = {}
 
 def _message_room(message):
+    """Figure out which Socket.IO room a message belongs to (global vs DM)."""
     if not message:
         return 'global_chat'
     if message.recipient_username:
@@ -160,6 +161,7 @@ def index():
 @app.route('/dms/<username>', methods=['GET', 'POST'])
 @login_required
 def dms(username=None):
+    """Render DM sidebar, optional search, and thread with a selected user."""
     current_username = session.get('username')
     current_user_obj = User.query.filter_by(username=current_username).first()
     
@@ -229,6 +231,7 @@ def dms(username=None):
 @app.route('/send_request/<username>')
 @login_required
 def send_request(username):
+    """Send a friend request if one doesn't already exist between the two users."""
     sender = User.query.filter_by(username=session['username']).first()
     receiver = User.query.filter_by(username=username).first()
     
@@ -260,6 +263,7 @@ def send_request(username):
 @app.route('/accept_request/<int:request_id>')
 @login_required
 def accept_request(request_id):
+    """Accept a pending request addressed to the current user."""
     req = Friendship.query.get_or_404(request_id)
     current_user = User.query.filter_by(username=session['username']).first()
     
@@ -274,6 +278,7 @@ def accept_request(request_id):
 @app.route('/reject_request/<int:request_id>')
 @login_required
 def reject_request(request_id):
+    """Reject (delete) a pending request addressed to the current user."""
     req = Friendship.query.get_or_404(request_id)
     current_user = User.query.filter_by(username=session['username']).first()
     
@@ -288,6 +293,7 @@ def reject_request(request_id):
 @app.route('/profile/<username>')
 @login_required
 def profile(username):
+    """Show another user's profile and the friendship status toward them."""
     user = User.query.filter_by(username=username).first_or_404()
     
     current_username = session.get('username')
@@ -321,6 +327,7 @@ def profile(username):
 @app.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
+    """View/edit own profile and handle incoming friend requests."""
     username = session.get('username')
     user = User.query.filter_by(username=username).first()
 
@@ -353,6 +360,7 @@ def account():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Authenticate a user by username/password and start their session."""
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
@@ -366,6 +374,7 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """Create a new user with optional bio and profile picture."""
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
@@ -412,18 +421,21 @@ def register():
 
 @app.route('/logout')
 def logout():
+    """End the current session and send the user back to login."""
     session.pop('username', None)
     return redirect(url_for('login'))
 
 # --- SocketIO ---
 @socketio.on('join')
 def handle_join(data):
+    """Place a connected socket into the global chat room."""
     # Everyone sits in the global room when the socket connects.
     username = data.get('username', 'Anonymous')
     join_room('global_chat')
     
 @socketio.on('send_message')
 def handle_message(data):
+    """Handle a plain-text global message with cooldown enforcement."""
     username = data.get('username', 'Anonymous')
     msg = data.get('msg', '')
     if not msg:
@@ -452,6 +464,7 @@ def handle_message(data):
 
 @socketio.on('upload_image')
 def handle_image(data):
+    """Handle a global image upload, saving the file then broadcasting it."""
     username = data.get('username', 'Anonymous')
     file_data = data.get('image')
     file_name = data.get('fileName')
@@ -502,6 +515,7 @@ def handle_image(data):
 
 @socketio.on('join_dm')
 def handle_join_dm(data):
+    """Join the deterministic DM room shared by two participants."""
     username = data.get('username')
     recipient = data.get('recipient')
     # Room name is deterministic dm_userA-userB to keep both sides synced.
@@ -510,6 +524,7 @@ def handle_join_dm(data):
 
 @socketio.on('send_private_message')
 def handle_private_message(data):
+    """Store and broadcast a DM text message to both users' shared room."""
     sender = session.get('username')
     recipient = data.get('recipient')
     msg = data.get('msg')
@@ -532,6 +547,7 @@ def handle_private_message(data):
 
 @socketio.on('upload_private_image')
 def handle_private_image(data):
+    """Store and broadcast a DM image to the proper room."""
     sender = session.get('username') 
     recipient = data.get('recipient')
     file_data = data.get('image')
@@ -575,6 +591,7 @@ def handle_private_image(data):
 
 @socketio.on('react_to_message')
 def handle_reaction(data):
+    """Toggle an emoji reaction on a message and push updated totals."""
     username = data.get('username')
     msg_id = data.get('message_id')
     emoji = data.get('emoji')
@@ -638,6 +655,7 @@ def handle_reaction(data):
 
 @socketio.on('edit_message')
 def handle_edit_message(data):
+    """Allow authors to edit their own messages and notify the room."""
     username = session.get('username')
     msg_id = data.get('message_id')
     new_content = (data.get('content') or '').strip()
@@ -666,6 +684,7 @@ def handle_edit_message(data):
 
 @socketio.on('delete_message')
 def handle_delete_message(data):
+    """Allow authors to delete their own messages, images, and reactions."""
     username = session.get('username')
     msg_id = data.get('message_id')
 
