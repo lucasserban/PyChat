@@ -30,6 +30,7 @@ app.config['CHAT_UPLOAD_FOLDER'] = CHAT_UPLOAD_FOLDER
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['CHAT_UPLOAD_FOLDER'], exist_ok=True)
 
+# Quick extension filter for uploads.
 def allowed_file(filename):
     """Lightweight extension check before accepting uploads."""
     return '.' in filename and \
@@ -41,6 +42,7 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 COOLDOWN_SECONDS = 10  # Per-user throttle for global chat posts
 _last_global_message_at = {}
 
+# Figure out which room (global vs dm_user-user) a message belongs to.
 def _message_room(message):
     if not message:
         return 'global_chat'
@@ -49,6 +51,7 @@ def _message_room(message):
         return f"dm_{'-'.join(participants)}"
     return 'global_chat'
 
+# Enforce per-user cooldown for global chat; returns remaining seconds.
 def check_global_cooldown(username):
     """Return remaining cooldown seconds for global chat; 0 when allowed."""
     if not username:
@@ -103,7 +106,7 @@ class MessageReaction(db.Model):
 with app.app_context():
     db.create_all()
 
-# --- Helpers ---
+# Gatekeeper decorator to ensure user is logged in before hitting a view.
 def login_required(f):
     """Redirect anonymous users to login, otherwise proceed."""
     @wraps(f)
@@ -117,6 +120,7 @@ def login_required(f):
 
 @app.route('/')
 @login_required
+# Home feed showing recent global chat history.
 def index():
     # Global Chat History: pull latest 50 messages and fan them out to the template.
     messages = Message.query.filter_by(recipient_username=None)\
@@ -159,6 +163,7 @@ def index():
 @app.route('/dms', methods=['GET', 'POST'])
 @app.route('/dms/<username>', methods=['GET', 'POST'])
 @login_required
+# search friends and load a conversation thread when selected.
 def dms(username=None):
     current_username = session.get('username')
     current_user_obj = User.query.filter_by(username=current_username).first()
@@ -228,6 +233,7 @@ def dms(username=None):
 
 @app.route('/send_request/<username>')
 @login_required
+# Send a friend request to another user if none exists.
 def send_request(username):
     sender = User.query.filter_by(username=session['username']).first()
     receiver = User.query.filter_by(username=username).first()
@@ -259,6 +265,7 @@ def send_request(username):
 
 @app.route('/accept_request/<int:request_id>')
 @login_required
+# Accept an incoming friend request.
 def accept_request(request_id):
     req = Friendship.query.get_or_404(request_id)
     current_user = User.query.filter_by(username=session['username']).first()
@@ -273,6 +280,7 @@ def accept_request(request_id):
 
 @app.route('/reject_request/<int:request_id>')
 @login_required
+# Reject (delete) an incoming friend request.
 def reject_request(request_id):
     req = Friendship.query.get_or_404(request_id)
     current_user = User.query.filter_by(username=session['username']).first()
@@ -287,6 +295,7 @@ def reject_request(request_id):
 
 @app.route('/profile/<username>')
 @login_required
+# View a user's profile and the relationship status with them.
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     
@@ -320,6 +329,7 @@ def profile(username):
 
 @app.route('/account', methods=['GET', 'POST'])
 @login_required
+# Manage your own profile info and see pending requests.
 def account():
     username = session.get('username')
     user = User.query.filter_by(username=username).first()
@@ -352,6 +362,7 @@ def account():
     return render_template('account.html', user=user, pending_requests=pending_requests)
 
 @app.route('/login', methods=['GET', 'POST'])
+# Log a user in by checking username/password.
 def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -365,6 +376,7 @@ def login():
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
+# Register a brand-new user account.
 def register():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -411,18 +423,21 @@ def register():
     return render_template('register.html')
 
 @app.route('/logout')
+# Clear the session and send user to login.
 def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
 
 # --- SocketIO ---
 @socketio.on('join')
+# Put a socket into the global chat room on connect.
 def handle_join(data):
     # Everyone sits in the global room when the socket connects.
     username = data.get('username', 'Anonymous')
     join_room('global_chat')
     
 @socketio.on('send_message')
+# Handle a text message to the global chat with cooldown checks.
 def handle_message(data):
     username = data.get('username', 'Anonymous')
     msg = data.get('msg', '')
@@ -451,6 +466,7 @@ def handle_message(data):
     }, room='global_chat')
 
 @socketio.on('upload_image')
+# Handle a global image upload and broadcast.
 def handle_image(data):
     username = data.get('username', 'Anonymous')
     file_data = data.get('image')
@@ -501,6 +517,7 @@ def handle_image(data):
             print(f"Error saving image: {e}")
 
 @socketio.on('join_dm')
+# Join the DM room for two participants.
 def handle_join_dm(data):
     username = data.get('username')
     recipient = data.get('recipient')
@@ -509,6 +526,7 @@ def handle_join_dm(data):
     join_room(room)
 
 @socketio.on('send_private_message')
+# Handle a DM text message and emit to both users.
 def handle_private_message(data):
     sender = session.get('username')
     recipient = data.get('recipient')
@@ -531,6 +549,7 @@ def handle_private_message(data):
         }, room=room)
 
 @socketio.on('upload_private_image')
+# Handle a DM image upload and emit to the DM room.
 def handle_private_image(data):
     sender = session.get('username') 
     recipient = data.get('recipient')
@@ -574,6 +593,7 @@ def handle_private_image(data):
             print(f"Error saving private image: {e}")
 
 @socketio.on('react_to_message')
+# Toggle an emoji reaction and broadcast updated counts.
 def handle_reaction(data):
     username = data.get('username')
     msg_id = data.get('message_id')
@@ -637,6 +657,7 @@ def handle_reaction(data):
 
 
 @socketio.on('edit_message')
+# Allow senders to edit their own message and notify the room.
 def handle_edit_message(data):
     username = session.get('username')
     msg_id = data.get('message_id')
@@ -665,6 +686,7 @@ def handle_edit_message(data):
 
 
 @socketio.on('delete_message')
+# Allow senders to delete their message (and attachments/reactions) and notify the room.
 def handle_delete_message(data):
     username = session.get('username')
     msg_id = data.get('message_id')
