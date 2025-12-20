@@ -11,12 +11,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import timezone, timedelta
 
+# PyChat server: Flask routes for pages, Socket.IO for realtime chat, SQLite via SQLAlchemy for storage.
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'BestProjectOfAllTime'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- Upload Configuration ---
+# Profile pics live in UPLOAD_FOLDER; chat images in CHAT_UPLOAD_FOLDER.
 UPLOAD_FOLDER = os.path.join('static', 'profile_pics')
 CHAT_UPLOAD_FOLDER = os.path.join('static', 'chat_uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -28,13 +31,14 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['CHAT_UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
+    """Lightweight extension check before accepting uploads."""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
-COOLDOWN_SECONDS = 10
+COOLDOWN_SECONDS = 10  # Per-user throttle for global chat posts
 _last_global_message_at = {}
 
 def _message_room(message):
@@ -62,6 +66,7 @@ def check_global_cooldown(username):
 
 # --- Models ---
 class User(db.Model):
+    # Minimal profile for chat; username is the main handle everywhere else.
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False) 
@@ -70,6 +75,7 @@ class User(db.Model):
     profile_pic = db.Column(db.String(150), nullable=True) 
 
 class Friendship(db.Model):
+    # One row per request; status moves from pending to accepted or is removed.
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -79,6 +85,7 @@ class Friendship(db.Model):
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_requests')
 
 class Message(db.Model):
+    # recipient_username is null for global chat; otherwise it is a DM.
     id = db.Column(db.Integer, primary_key=True)
     sender_username = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
     recipient_username = db.Column(db.String(80), nullable=True)
@@ -87,6 +94,7 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class MessageReaction(db.Model):
+    # Tracks who reacted and with what emoji for each message.
     id = db.Column(db.Integer, primary_key=True)
     message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
     user_username = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
@@ -97,6 +105,7 @@ with app.app_context():
 
 # --- Helpers ---
 def login_required(f):
+    """Redirect anonymous users to login, otherwise proceed."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'username' not in session:
@@ -109,7 +118,7 @@ def login_required(f):
 @app.route('/')
 @login_required
 def index():
-    # Global Chat History
+    # Global Chat History: pull latest 50 messages and fan them out to the template.
     messages = Message.query.filter_by(recipient_username=None)\
         .order_by(Message.timestamp.desc())\
         .limit(50).all()
@@ -120,7 +129,7 @@ def index():
 
     for m in messages:
         reactions = MessageReaction.query.filter_by(message_id=m.id).all()
-        
+        # Collapse reactions into counts plus who reacted for tooltip rendering.
         reactions_map = {}
         for r in reactions:
             if r.emoji not in reactions_map:
@@ -154,6 +163,7 @@ def dms(username=None):
     current_username = session.get('username')
     current_user_obj = User.query.filter_by(username=current_username).first()
     
+    # Optional search box to find people to message.
     search_results = []
     if request.method == 'POST':
         search_query = request.form.get('search_username', '').strip()
@@ -161,6 +171,7 @@ def dms(username=None):
             results = User.query.filter(User.username.ilike(f"%{search_query}%"), User.username != current_username).all()
             search_results = results
 
+    # Build accepted friendships in both directions to show the sidebar list.
     friends_sent = Friendship.query.filter_by(sender_id=current_user_obj.id, status='accepted').all()
     friends_received = Friendship.query.filter_by(receiver_id=current_user_obj.id, status='accepted').all()
     
@@ -172,6 +183,7 @@ def dms(username=None):
 
     history = []
     if username:
+        # Fetch the thread between the two users, sorted oldest-first.
         messages = Message.query.filter(
             or_(
                 (Message.sender_username == current_username) & (Message.recipient_username == username),
@@ -180,7 +192,7 @@ def dms(username=None):
         ).order_by(Message.timestamp.asc()).all()
         
         for m in messages:
-            # --- LOGICĂ ADĂUGATĂ PENTRU REACȚII ---
+            # Reactions logic
             reactions = MessageReaction.query.filter_by(message_id=m.id).all()
             reactions_map = {}
             for r in reactions:
@@ -196,17 +208,16 @@ def dms(username=None):
                     'count': data['count'],
                     'user_has_reacted': current_username in data['users']
                 })
-            # ---------------------------------------
 
             romania_tz = timezone(timedelta(hours=2))
             current_time = datetime.now(romania_tz).strftime('%H:%M')
             history.append({
-                'id': m.id,  # IMPORTANT: Avem nevoie de ID
+                'id': m.id,
                 'sender_username': m.sender_username,
                 'content': m.content,
                 'image_filename': m.image_filename,
                 'timestamp': current_time,
-                'reactions': reactions_list # Trimitem reacțiile
+                'reactions': reactions_list
             })
 
     return render_template('dms.html', 
@@ -225,6 +236,7 @@ def send_request(username):
         flash('User not found.')
         return redirect(url_for('dms'))
     
+    # Stop duplicate or crossed requests between the same pair.
     existing = Friendship.query.filter(
         or_(
             (Friendship.sender_id == sender.id) & (Friendship.receiver_id == receiver.id),
@@ -253,7 +265,7 @@ def accept_request(request_id):
     
     if req.receiver_id != current_user.id:
         abort(403)
-        
+    # Flip to accepted; one row represents the friendship.
     req.status = 'accepted'
     db.session.commit()
     flash(f'You are now friends with {req.sender.username}!')
@@ -267,7 +279,7 @@ def reject_request(request_id):
     
     if req.receiver_id != current_user.id:
         abort(403)
-        
+    # Reject by deleting the pending record entirely.
     db.session.delete(req)
     db.session.commit()
     flash('Friend request removed.')
@@ -281,7 +293,7 @@ def profile(username):
     current_username = session.get('username')
     current_user = User.query.filter_by(username=current_username).first()
     
-    # Determine Friendship Status
+    # Compute friendship status so the template can show the right buttons.
     friendship_status = 'none' # Default: no relationship
     
     if current_username == username:
@@ -312,6 +324,7 @@ def account():
     username = session.get('username')
     user = User.query.filter_by(username=username).first()
 
+    # Basic profile edit (email/bio) plus optional profile picture upload.
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         bio = request.form.get('bio', '').strip()
@@ -333,6 +346,7 @@ def account():
             flash('Profile updated successfully!')
             return redirect(url_for('account'))
 
+    # Show pending incoming requests on the account page.
     pending_requests = Friendship.query.filter_by(receiver_id=user.id, status='pending').all()
 
     return render_template('account.html', user=user, pending_requests=pending_requests)
@@ -343,7 +357,7 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         user = User.query.filter_by(username=username).first()
-        
+        # Check the hashed password and, if valid, stash the username in session.
         if user and check_password_hash(user.password, password):
             session['username'] = user.username
             return redirect(url_for('index'))
@@ -363,6 +377,7 @@ def register():
         elif User.query.filter_by(username=username).first():
             flash('Username already exists')
         else:
+            # Save an optional profile picture; name is prefixed for uniqueness.
             profile_pic_filename = None
             if 'profile_pic' in request.files:
                 file = request.files['profile_pic']
@@ -403,6 +418,7 @@ def logout():
 # --- SocketIO ---
 @socketio.on('join')
 def handle_join(data):
+    # Everyone sits in the global room when the socket connects.
     username = data.get('username', 'Anonymous')
     join_room('global_chat')
     
@@ -413,6 +429,7 @@ def handle_message(data):
     if not msg:
         return
 
+    # Per-user cooldown for global text messages.
     remaining = check_global_cooldown(username)
     if remaining > 0:
         emit('rate_limited', {'remaining': ceil(remaining)}, to=request.sid)
@@ -440,6 +457,7 @@ def handle_image(data):
     file_name = data.get('fileName')
     
     if file_data and file_name:
+        # Image uploads share the same cooldown as text.
         remaining = check_global_cooldown(username)
         if remaining > 0:
             emit('rate_limited', {'remaining': ceil(remaining)}, to=request.sid)
@@ -486,6 +504,7 @@ def handle_image(data):
 def handle_join_dm(data):
     username = data.get('username')
     recipient = data.get('recipient')
+    # Room name is deterministic dm_userA-userB to keep both sides synced.
     room = f"dm_{'-'.join(sorted([username, recipient]))}"
     join_room(room)
 
@@ -495,6 +514,7 @@ def handle_private_message(data):
     recipient = data.get('recipient')
     msg = data.get('msg')
     if msg and recipient:
+        # Store the DM and push it to the shared room for both users.
         new_msg = Message(sender_username=sender, recipient_username=recipient, content=msg)
         db.session.add(new_msg)
         db.session.commit()
@@ -553,7 +573,6 @@ def handle_private_image(data):
         except Exception as e:
             print(f"Error saving private image: {e}")
 
-# --- REACTION LOGIC (Must be BEFORE socketio.run) ---
 @socketio.on('react_to_message')
 def handle_reaction(data):
     username = data.get('username')
@@ -568,7 +587,7 @@ def handle_reaction(data):
     if not username or not msg_id or not emoji:
         return
 
-    # 1. Găsim mesajul pentru a vedea dacă e DM sau Global
+    # Find the message to decide which room should get the reaction update.
     message = Message.query.get(msg_id)
     if not message:
         return
@@ -583,7 +602,7 @@ def handle_reaction(data):
     
     db.session.commit()
     
-    # Recalculăm reacțiile
+    # Recompute reactions to send a fresh tally.
     all_reactions = MessageReaction.query.filter_by(message_id=msg_id).all()
     
     reactions_map = {}
@@ -606,15 +625,14 @@ def handle_reaction(data):
         'reactions': reactions_list
     }
 
-    # 2. Trimitem evenimentul în camera corectă
+    # Broadcast to the right room (DM vs global).
     if message.recipient_username:
-        # Este un mesaj privat (DM)
-        # Reconstruim numele camerei DM: dm_user1-user2 (sortat alfabetic)
+        # Private message: rebuild dm_user1-user2 room name.
         participants = sorted([message.sender_username, message.recipient_username])
         room_name = f"dm_{'-'.join(participants)}"
         emit('update_message_reactions', response_data, room=room_name)
     else:
-        # Este mesaj global
+        # Global message.
         emit('update_message_reactions', response_data, room='global_chat')
 
 
@@ -665,6 +683,7 @@ def handle_delete_message(data):
 
     room = _message_room(message)
 
+    # Clean up reactions tied to this message before deleting it.
     MessageReaction.query.filter_by(message_id=msg_id).delete()
 
     if message.image_filename:
@@ -680,6 +699,5 @@ def handle_delete_message(data):
 
     emit('message_deleted', {'message_id': msg_id}, room=room)
 
-# --- MAIN ENTRY POINT (Must be at the very END) ---
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
