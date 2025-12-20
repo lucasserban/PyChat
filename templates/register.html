@@ -7,11 +7,20 @@
     
     <form method="POST" enctype="multipart/form-data">
         <div class="register-avatar-wrapper">
-            <div id="register-placeholder" class="avatar-placeholder">
-                👤
-            </div>
-            <img id="register-preview" src="" alt="Preview" class="avatar-preview" style="display: none;">
+            <label for="register-file-input" class="avatar-label">
+                <div id="avatar-display-area">
+                    <div class="register-avatar" id="register-placeholder">
+                        👤
+                    </div>
+                    <img src="" alt="Preview" class="register-avatar-img" id="register-preview" style="display:none;">
+                </div>
+                <div class="avatar-overlay">
+                    <span class="plus-icon">+</span>
+                </div>
+            </label>
         </div>
+
+        <input type="file" id="register-file-input" name="profile_pic" accept=".png, .jpg, .jpeg, .gif" style="display: none;">
 
         <input type="text" name="username" placeholder="Username" required autofocus value="{{ request.form.get('username', '') }}">
         <input type="email" name="email" placeholder="Email" required value="{{ request.form.get('email', '') }}">
@@ -19,10 +28,6 @@
         
         <textarea name="bio" placeholder="Tell us about yourself (Bio)" rows="3" 
             style="width: 93%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: rgba(3, 6, 23, 0.55); color: #e5e7eb; outline: none; font-family: inherit; resize: none; margin-bottom: 12px;"></textarea>
-
-        <label for="profile_pic" style="color: #9ca3af; margin-bottom: 5px; display: block; font-size: 0.9em;">Profile Picture (optional):</label>
-        <input type="file" id="register-file-input" name="profile_pic" accept=".png, .jpg, .jpeg, .gif" 
-            style="color: #e5e7eb; background: transparent; border: none; padding: 0; margin-bottom: 15px;">
 
         <button type="submit">Register</button>
     </form>
