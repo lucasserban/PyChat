@@ -1,5 +1,3 @@
-/* Modern, accessible styling for the register page */
-
 :root {
 	--bg: #0f172a;
 	--panel: #111827;
@@ -19,6 +17,7 @@
 	display: none;
 }
 
+/* Registration container styles */
 .register-container {
     max-width: 420px;
     margin: 4.5rem auto 3rem;
@@ -110,7 +109,7 @@
 	text-decoration: underline;
 }
 
-/* Flash messages */
+
 .flashes {
 	list-style: none;
 	margin: 1rem 0 0 0;
@@ -123,10 +122,9 @@
 	margin-top: 8px;
 	background: rgba(239, 68, 68, 0.25);
 	border: 1px solid rgba(239, 68, 68, 0.25);
-	color: #fecaca; /* red-200 */
+	color: #fecaca;
 }
 
-/* Small screens */
 @media (max-width: 420px) {
 	.register-container {
 		margin: 2.5rem 1rem;

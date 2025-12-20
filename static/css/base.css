@@ -1,3 +1,4 @@
+/* Base styles for the application */
 header {
     display: flex;
     align-items: center;
@@ -51,7 +52,7 @@ body {
     border-radius: var(--radius);
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
     z-index: 10;
-    width: 1200px;
+    width: 1135px;
     margin-left: calc(50% - 600px);
     margin-right: auto;
 }

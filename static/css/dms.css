@@ -1,4 +1,3 @@
-/* --- Variabile și Configurații Generale --- */
 :root {
     --bg: #0f172a;
     --panel: #111827;
@@ -12,8 +11,7 @@
     --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 
-
-/* --- DM Container --- */
+/* Dm Container */
 .dm-container {
     display: flex;
     height: 70vh;
@@ -82,10 +80,9 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px; /* Spațiu între rânduri */
+    gap: 8px;
 }
 
-/* --- LOGICĂ MSG-ROW (Identică cu index.css) --- */
 .msg-row {
     display: flex;
     align-items: flex-end;
@@ -98,7 +95,7 @@
 .msg-row.sent { justify-content: flex-end; }
 .msg-row.received { justify-content: flex-start; }
 
-/* BULE */
+/* Msj buble */
 .msg-bubble {
     max-width: 70%;
     padding: 10px 14px;
@@ -113,12 +110,11 @@
 }
 
 .msg-sent .reaction-tag.active {
-    background: rgba(255, 255, 255, 0.25); /* Fundal mai deschis */
-    border-color: rgba(255, 255, 255, 0.9); /* Bordură albă puternică */
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.9);
     color: #fff;
 }
 
-/* Opțional: Reacțiile inactive pe mesajele trimise să fie puțin mai întunecate */
 .msg-sent .reaction-tag {
     background: rgba(0, 0, 0, 0.15); 
 }
@@ -138,10 +134,10 @@
     border-bottom-left-radius: 4px;
 }
 
-/* Elemente interne mesaj */
 .msg-text { white-space: pre-wrap; word-wrap: break-word; }
 .chat-image { max-width: 100%; max-height: 300px; border-radius: 8px; margin-bottom: 5px; }
 
+/* Timestamp */
 .msg-time {
     align-self: flex-end;
     font-size: 0.65em;
@@ -151,7 +147,7 @@
 }
 .msg-received .msg-time { color: rgba(205, 200, 200, 0.629); }
 
-/* --- REACȚII --- */
+/* Reactions */
 .msg-reactions {
     display: flex;
     align-items: center;
@@ -173,7 +169,6 @@
 .reaction-tag:hover { background: rgba(255, 255, 255, 0.2); }
 .reaction-tag.active { background: rgba(59, 130, 246, 0.3); border-color: rgba(59, 130, 246, 0.5); }
 
-/* Buton Extern (Smiley) */
 .reaction-picker-wrapper {
     position: relative;
     opacity: 0;
@@ -196,7 +191,6 @@
 }
 .add-reaction-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
 
-/* Meniu Emoji */
 .reaction-menu {
     display: none;
     position: absolute;
@@ -216,7 +210,7 @@
 .reaction-menu span { cursor: pointer; padding: 5px; font-size: 1.3em; transition: transform 0.1s; border-radius: 50%; }
 .reaction-menu span:hover { transform: scale(1.2); background: rgba(255,255,255,0.1); }
 
-/* --- MESSAGE MENU (Edit/Delete) --- */
+/* Message Menu */
 .msg-menu-wrapper {
     position: relative;
     opacity: 0;
@@ -278,7 +272,7 @@
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* Input Area */
+/* Chat Input Area */
 .chat-input-area {
     padding: 16px 20px;
     border-top: 1px solid rgba(255,255,255,0.06);

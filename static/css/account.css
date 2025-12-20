@@ -12,8 +12,7 @@
     --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 
-/* --- Header & Nav --- */
-
+/* Header */
 .logout-link {
     color: #fecaca;
 }
@@ -34,7 +33,7 @@
     background: rgba(255,255,255,0.06);
 }
 
-/* --- Account Container (GRID LAYOUT) --- */
+/* Account Container */
 .account-container {
     max-width: 950px;
     margin: 2rem auto;
@@ -48,7 +47,6 @@
     -webkit-backdrop-filter: blur(8px);
     text-align: center;
 
-    /* Grid Setup */
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     gap: 3rem;
@@ -60,8 +58,9 @@
     box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22);
 }
 
+/* Profile Header */
 .profile-header {
-    grid-column: 1 / -1; /* Spans full width */
+    grid-column: 1 / -1;
     text-align: center;
     width: 100%;
     margin-bottom: 20px;
@@ -73,14 +72,13 @@
     width: 100%;
 }
 
-/* --- Right Side: Pending Panel --- */
 .pending-panel {
     background: rgba(255, 255, 255, 0.03);
     padding: 20px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     text-align: left;
-    min-height: 150px; /* Ensure it has height even when empty */
+    min-height: 150px;
     display: flex;
     flex-direction: column;
 }
@@ -94,6 +92,7 @@
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
+/* Friend Requests List */
 .requests-list {
     display: flex; 
     flex-direction: column; 
@@ -124,7 +123,6 @@
 .accept-btn { background: #10b981; color: white; }
 .decline-btn { background: #ef4444; color: white; }
 
-/* Empty State Style */
 .empty-state {
     flex: 1;
     display: flex;
@@ -142,13 +140,13 @@
     opacity: 0.5;
 }
 
-/* --- Avatar Styles --- */
 .profile-avatar-wrapper {
     display: flex;
     justify-content: center;
     margin-bottom: 1rem;
 }
 
+/* Avatar Upload */
 .avatar-label {
     position: relative;
     cursor: pointer;
@@ -208,7 +206,6 @@
     font-weight: bold;
 }
 
-/* --- Form Styles --- */
 .form-group {
     margin-bottom: 1.2rem;
 }
@@ -221,6 +218,7 @@
     font-weight: 600;
 }
 
+/* Input Styles */
 .account-form input[type="text"],
 .account-form input[type="email"],
 .account-form textarea {
