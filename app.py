@@ -5,6 +5,7 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
 from datetime import datetime
+from math import ceil
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -32,6 +33,24 @@ def allowed_file(filename):
 
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
+
+COOLDOWN_SECONDS = 10
+_last_global_message_at = {}
+
+def check_global_cooldown(username):
+    """Return remaining cooldown seconds for global chat; 0 when allowed."""
+    if not username:
+        return 0
+
+    now = datetime.now(timezone.utc)
+    last_sent = _last_global_message_at.get(username)
+    if last_sent:
+        remaining = COOLDOWN_SECONDS - (now - last_sent).total_seconds()
+        if remaining > 0:
+            return remaining
+
+    _last_global_message_at[username] = now
+    return 0
 
 # --- Models ---
 class User(db.Model):
@@ -383,20 +402,28 @@ def handle_join(data):
 def handle_message(data):
     username = data.get('username', 'Anonymous')
     msg = data.get('msg', '')
-    if msg:
-        new_msg = Message(sender_username=username, content=msg)
-        db.session.add(new_msg)
-        db.session.commit()
-        
-        romania_tz = timezone(timedelta(hours=2))
-        current_time = datetime.now(romania_tz).strftime('%H:%M')
-        
-        emit('receive_message', {
-            'id': new_msg.id, # IMPORTANT for reactions
-            'username': username, 
-            'msg': msg,
-            'timestamp': current_time 
-        }, room='global_chat')
+    if not msg:
+        return
+
+    remaining = check_global_cooldown(username)
+    if remaining > 0:
+        emit('rate_limited', {'remaining': ceil(remaining)}, to=request.sid)
+        return
+
+    new_msg = Message(sender_username=username, content=msg)
+    db.session.add(new_msg)
+    db.session.commit()
+    
+    romania_tz = timezone(timedelta(hours=2))
+    current_time = datetime.now(romania_tz).strftime('%H:%M')
+    
+    emit('cooldown_started', {'seconds': COOLDOWN_SECONDS}, to=request.sid)
+    emit('receive_message', {
+        'id': new_msg.id, # IMPORTANT for reactions
+        'username': username, 
+        'msg': msg,
+        'timestamp': current_time 
+    }, room='global_chat')
 
 @socketio.on('upload_image')
 def handle_image(data):
@@ -405,6 +432,11 @@ def handle_image(data):
     file_name = data.get('fileName')
     
     if file_data and file_name:
+        remaining = check_global_cooldown(username)
+        if remaining > 0:
+            emit('rate_limited', {'remaining': ceil(remaining)}, to=request.sid)
+            return
+
         try:
             if "," in file_data:
                 _, encoded = file_data.split(",", 1)
@@ -430,6 +462,7 @@ def handle_image(data):
             romania_tz = timezone(timedelta(hours=2))
             current_time = datetime.now(romania_tz).strftime('%H:%M')
 
+            emit('cooldown_started', {'seconds': COOLDOWN_SECONDS}, to=request.sid)
             emit('receive_message', {
                 'id': new_msg.id,
                 'username': username, 

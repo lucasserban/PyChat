@@ -3,6 +3,54 @@ const chatContainer = document.getElementById('chat');
 const msgInput = document.getElementById('message');
 const sendBtn = document.getElementById('send');
 const imageInput = document.getElementById('image-input');
+const COOLDOWN_SECONDS = 10;
+
+let cooldownUntil = 0;
+let cooldownTimerId = null;
+
+function isOnCooldown() {
+    return Date.now() < cooldownUntil;
+}
+
+function updateCooldownUI() {
+    const remaining = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
+    const onCooldown = remaining > 0;
+
+    if (sendBtn) {
+        sendBtn.disabled = onCooldown;
+        sendBtn.textContent = onCooldown ? `Wait ${remaining}s` : 'Send';
+    }
+
+    if (imageInput) {
+        imageInput.disabled = onCooldown;
+    }
+}
+
+function startCooldown(seconds) {
+    cooldownUntil = Date.now() + (seconds * 1000);
+    updateCooldownUI();
+
+    if (cooldownTimerId) {
+        clearInterval(cooldownTimerId);
+    }
+
+    cooldownTimerId = setInterval(() => {
+        updateCooldownUI();
+        if (!isOnCooldown()) {
+            clearInterval(cooldownTimerId);
+            cooldownTimerId = null;
+        }
+    }, 500);
+}
+
+function showSystemMessage(text) {
+    if (!chatContainer || !text) return;
+    const div = document.createElement('div');
+    div.className = 'msg sys';
+    div.innerText = text;
+    chatContainer.appendChild(div);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 
 // Scroll to bottom on load
 if(chatContainer) {
@@ -182,18 +230,30 @@ socket.on('receive_message', data => {
 });
 
 socket.on('system_message', data => {
-    if (!chatContainer) return;
-    const div = document.createElement('div');
-    div.className = 'msg sys';
-    div.innerText = data.msg;
-    chatContainer.appendChild(div);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    showSystemMessage(data.msg);
+});
+
+socket.on('rate_limited', data => {
+    const seconds = Math.max(1, Math.ceil((data && data.remaining) ? data.remaining : COOLDOWN_SECONDS));
+    startCooldown(seconds);
+    showSystemMessage(`Please wait ${seconds}s before sending another global message.`);
+});
+
+socket.on('cooldown_started', data => {
+    const seconds = Math.max(1, Math.ceil((data && data.seconds) ? data.seconds : COOLDOWN_SECONDS));
+    startCooldown(seconds);
 });
 
 function sendMessage() {
     if (!msgInput) return;
     const msg = msgInput.value.trim();
     if (!msg) return;
+
+    if (isOnCooldown()) {
+        const remaining = Math.max(1, Math.ceil((cooldownUntil - Date.now()) / 1000));
+        showSystemMessage(`Please wait ${remaining}s before sending another global message.`);
+        return;
+    }
 
     socket.emit('send_message', {
         username: window.currentUsername,
@@ -206,6 +266,13 @@ function sendMessage() {
 
 if (imageInput) {
     imageInput.addEventListener('change', function() {
+        if (isOnCooldown()) {
+            const remaining = Math.max(1, Math.ceil((cooldownUntil - Date.now()) / 1000));
+            showSystemMessage(`Please wait ${remaining}s before sending another global message.`);
+            this.value = '';
+            return;
+        }
+
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
