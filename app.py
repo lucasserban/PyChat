@@ -37,6 +37,14 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 COOLDOWN_SECONDS = 10
 _last_global_message_at = {}
 
+def _message_room(message):
+    if not message:
+        return 'global_chat'
+    if message.recipient_username:
+        participants = sorted([message.sender_username, message.recipient_username])
+        return f"dm_{'-'.join(participants)}"
+    return 'global_chat'
+
 def check_global_cooldown(username):
     """Return remaining cooldown seconds for global chat; 0 when allowed."""
     if not username:
@@ -496,6 +504,7 @@ def handle_private_message(data):
 
         room = f"dm_{'-'.join(sorted([sender, recipient]))}"
         emit('receive_private_message', {
+            'id': new_msg.id,
             'sender': sender, 
             'msg': msg,
             'timestamp': current_time
@@ -535,6 +544,7 @@ def handle_private_image(data):
             room = f"dm_{'-'.join(sorted([sender, recipient]))}"
             
             emit('receive_private_message', {
+                'id': new_msg.id,
                 'sender': sender, 
                 'msg': "", 
                 'image': unique_name
@@ -606,6 +616,69 @@ def handle_reaction(data):
     else:
         # Este mesaj global
         emit('update_message_reactions', response_data, room='global_chat')
+
+
+@socketio.on('edit_message')
+def handle_edit_message(data):
+    username = session.get('username')
+    msg_id = data.get('message_id')
+    new_content = (data.get('content') or '').strip()
+
+    try:
+        msg_id = int(msg_id)
+    except (TypeError, ValueError):
+        return
+
+    if not username or not msg_id or not new_content:
+        return
+
+    message = Message.query.get(msg_id)
+    if not message or message.sender_username != username:
+        return
+
+    message.content = new_content
+    db.session.commit()
+
+    room = _message_room(message)
+    emit('message_updated', {
+        'message_id': message.id,
+        'content': new_content
+    }, room=room)
+
+
+@socketio.on('delete_message')
+def handle_delete_message(data):
+    username = session.get('username')
+    msg_id = data.get('message_id')
+
+    try:
+        msg_id = int(msg_id)
+    except (TypeError, ValueError):
+        return
+
+    if not username or not msg_id:
+        return
+
+    message = Message.query.get(msg_id)
+    if not message or message.sender_username != username:
+        return
+
+    room = _message_room(message)
+
+    MessageReaction.query.filter_by(message_id=msg_id).delete()
+
+    if message.image_filename:
+        try:
+            image_path = os.path.join(app.config['CHAT_UPLOAD_FOLDER'], message.image_filename)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        except Exception:
+            pass
+
+    db.session.delete(message)
+    db.session.commit()
+
+    emit('message_deleted', {'message_id': msg_id}, room=room)
 
 # --- MAIN ENTRY POINT (Must be at the very END) ---
 if __name__ == '__main__':

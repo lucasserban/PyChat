@@ -52,6 +52,134 @@ function showSystemMessage(text) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+function closeAllMenus(exceptMenu) {
+    document.querySelectorAll('.msg-menu').forEach(menu => {
+        if (menu !== exceptMenu) {
+            menu.classList.remove('open');
+        }
+    });
+}
+
+document.addEventListener('click', (e) => {
+    const toggleBtn = e.target.closest('.msg-menu-btn');
+    if (toggleBtn) {
+        e.stopPropagation();
+        const menu = toggleBtn.parentElement.querySelector('.msg-menu');
+        const isOpen = menu.classList.contains('open');
+        closeAllMenus(menu);
+        if (!isOpen) {
+            menu.classList.add('open');
+        }
+        return;
+    }
+
+    const editBtn = e.target.closest('.msg-menu-edit');
+    if (editBtn) {
+        e.stopPropagation();
+        const messageId = editBtn.getAttribute('data-msg-id');
+        handleEditMessage(messageId);
+        closeAllMenus(null);
+        return;
+    }
+
+    const deleteBtn = e.target.closest('.msg-menu-delete');
+    if (deleteBtn) {
+        e.stopPropagation();
+        const messageId = deleteBtn.getAttribute('data-msg-id');
+        handleDeleteMessage(messageId);
+        closeAllMenus(null);
+        return;
+    }
+
+    closeAllMenus(null);
+});
+
+function createMenuElement(messageId) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg-menu-wrapper';
+    wrapper.setAttribute('data-msg-id', messageId);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'msg-menu-btn';
+    btn.textContent = '⋮';
+
+    const menu = document.createElement('div');
+    menu.className = 'msg-menu';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'msg-menu-edit';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = (e) => {
+        e.stopPropagation();
+        handleEditMessage(messageId);
+        closeAllMenus(null);
+    };
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'msg-menu-delete';
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        handleDeleteMessage(messageId);
+        closeAllMenus(null);
+    };
+
+    menu.appendChild(editBtn);
+    menu.appendChild(deleteBtn);
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = menu.classList.contains('open');
+        closeAllMenus(menu);
+        if (!isOpen) {
+            menu.classList.add('open');
+        }
+    });
+
+    wrapper.appendChild(btn);
+    wrapper.appendChild(menu);
+    return wrapper;
+}
+
+function handleEditMessage(messageId) {
+    const bubble = document.querySelector(`.msg-bubble[data-msg-id="${messageId}"]`);
+    const textDiv = bubble ? bubble.querySelector('.msg-text') : null;
+    const currentText = textDiv ? textDiv.innerText : '';
+    const newText = prompt('Edit your message:', currentText);
+    if (newText === null) return;
+    const trimmed = newText.trim();
+    if (!trimmed) return;
+    socket.emit('edit_message', { message_id: messageId, content: trimmed });
+}
+
+function handleDeleteMessage(messageId) {
+    if (!confirm('Delete this message?')) return;
+    socket.emit('delete_message', { message_id: messageId });
+}
+
+function applyMessageUpdate(messageId, newContent) {
+    const bubble = document.querySelector(`.msg-bubble[data-msg-id="${messageId}"]`);
+    if (!bubble) return;
+    let textDiv = bubble.querySelector('.msg-text');
+    if (!textDiv) {
+        textDiv = document.createElement('div');
+        textDiv.className = 'msg-text';
+        const reactions = bubble.querySelector('.msg-reactions');
+        bubble.insertBefore(textDiv, reactions || bubble.firstChild);
+    }
+    textDiv.innerText = newContent;
+}
+
+function applyMessageDelete(messageId) {
+    const bubble = document.querySelector(`.msg-bubble[data-msg-id="${messageId}"]`);
+    if (!bubble) return;
+    const row = bubble.closest('.msg-row');
+    if (row && row.parentNode) {
+        row.parentNode.removeChild(row);
+    }
+}
+
 // Scroll to bottom on load
 if(chatContainer) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -142,8 +270,11 @@ function appendMessage(data) {
         </div>
     `;
 
-    // 3. Dacă e mesajul MEU, punem butonul ÎNAINTE de bulă
+    // 3. Dacă e mesajul MEU, punem menu + picker ÎNAINTE de bulă
     if (isMe && data.id) {
+        const menu = createMenuElement(data.id);
+        rowDiv.appendChild(menu);
+        
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = reactionPickerHTML;
         rowDiv.appendChild(tempDiv.firstElementChild);
@@ -213,11 +344,14 @@ function appendMessage(data) {
     // Adăugăm bula în rând
     rowDiv.appendChild(bubbleDiv);
 
-    // 5. Dacă e mesajul ALTCUIVA, punem butonul DUPĂ bulă
+    // 5. Dacă e mesajul ALTCUIVA, punem picker + menu DUPĂ bulă
     if (!isMe && data.id) {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = reactionPickerHTML;
         rowDiv.appendChild(tempDiv.firstElementChild);
+        
+        const menu = createMenuElement(data.id);
+        rowDiv.appendChild(menu);
     }
     
     // Adăugăm tot rândul în chat
@@ -242,6 +376,16 @@ socket.on('rate_limited', data => {
 socket.on('cooldown_started', data => {
     const seconds = Math.max(1, Math.ceil((data && data.seconds) ? data.seconds : COOLDOWN_SECONDS));
     startCooldown(seconds);
+});
+
+socket.on('message_updated', data => {
+    if (!data || !data.message_id) return;
+    applyMessageUpdate(data.message_id, data.content || '');
+});
+
+socket.on('message_deleted', data => {
+    if (!data || !data.message_id) return;
+    applyMessageDelete(data.message_id);
 });
 
 function sendMessage() {

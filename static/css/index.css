@@ -252,6 +252,72 @@ body {
     background: rgba(255,255,255,0.1);
 }
 
+/* --- MESSAGE MENU (Edit/Delete) --- */
+.msg-menu-wrapper {
+    position: relative;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    align-self: center;
+}
+
+.msg-row:hover .msg-menu-wrapper {
+    opacity: 1;
+}
+
+.msg-menu-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.msg-menu-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+
+.msg-menu {
+    display: none;
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    flex-direction: column;
+    min-width: 120px;
+    z-index: 120;
+}
+
+.msg-menu.open {
+    display: flex;
+}
+
+.msg-menu button {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    padding: 9px 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.msg-menu button:hover {
+    background: rgba(255,255,255,0.08);
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateX(-50%) translateY(5px); }
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
