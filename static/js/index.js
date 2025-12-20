@@ -144,13 +144,102 @@ function createMenuElement(messageId) {
 
 function handleEditMessage(messageId) {
     const bubble = document.querySelector(`.msg-bubble[data-msg-id="${messageId}"]`);
-    const textDiv = bubble ? bubble.querySelector('.msg-text') : null;
+    if (!bubble) return;
+
+    // Prevent multiple edit boxes
+    if (bubble.querySelector('.edit-container')) return;
+
+    const textDiv = bubble.querySelector('.msg-text');
     const currentText = textDiv ? textDiv.innerText : '';
-    const newText = prompt('Edit your message:', currentText);
-    if (newText === null) return;
-    const trimmed = newText.trim();
-    if (!trimmed) return;
-    socket.emit('edit_message', { message_id: messageId, content: trimmed });
+
+    // Hide original text
+    if (textDiv) textDiv.style.display = 'none';
+
+    // Create edit container
+    const editContainer = document.createElement('div');
+    editContainer.className = 'edit-container';
+    editContainer.style.marginTop = '8px';
+
+    // Textarea
+    const textarea = document.createElement('textarea');
+    textarea.value = currentText;
+    textarea.style.width = '100%';
+    textarea.style.boxSizing = 'border-box';
+    textarea.style.minHeight = '60px';
+    textarea.style.borderRadius = '8px';
+    textarea.style.padding = '8px';
+    textarea.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+    textarea.style.color = '#fff';
+    textarea.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+    textarea.style.outline = 'none';
+    textarea.style.resize = 'vertical';
+    textarea.style.fontFamily = 'inherit';
+
+    // Auto-focus
+    setTimeout(() => {
+        textarea.focus();
+        // Cursor at end
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }, 0);
+
+    // Buttons
+    const btnRow = document.createElement('div');
+    btnRow.style.display = 'flex';
+    btnRow.style.justifyContent = 'flex-end';
+    btnRow.style.gap = '8px';
+    btnRow.style.marginTop = '8px';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.background = 'transparent';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.color = '#aaa';
+    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.style.fontSize = '0.9em';
+    cancelBtn.onclick = () => {
+        editContainer.remove();
+        if (textDiv) textDiv.style.display = 'block';
+    };
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.background = '#3b82f6';
+    saveBtn.style.border = 'none';
+    saveBtn.style.borderRadius = '6px';
+    saveBtn.style.padding = '4px 12px';
+    saveBtn.style.color = 'white';
+    saveBtn.style.cursor = 'pointer';
+    saveBtn.style.fontSize = '0.9em';
+    saveBtn.onclick = () => {
+        const val = textarea.value.trim();
+        if (val) {
+            socket.emit('edit_message', { message_id: messageId, content: val });
+        }
+    };
+    
+    // Enter to save, Shift+Enter for new line, Escape to cancel
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            saveBtn.click();
+        }
+        if (e.key === 'Escape') {
+            cancelBtn.click();
+        }
+    });
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+
+    editContainer.appendChild(textarea);
+    editContainer.appendChild(btnRow);
+
+    // Insert into bubble
+    if (textDiv) {
+        textDiv.parentNode.insertBefore(editContainer, textDiv.nextSibling);
+    } else {
+        bubble.appendChild(editContainer);
+    }
 }
 
 function handleDeleteMessage(messageId) {
@@ -161,6 +250,11 @@ function handleDeleteMessage(messageId) {
 function applyMessageUpdate(messageId, newContent) {
     const bubble = document.querySelector(`.msg-bubble[data-msg-id="${messageId}"]`);
     if (!bubble) return;
+    
+    // Remove edit container if open
+    const editContainer = bubble.querySelector('.edit-container');
+    if (editContainer) editContainer.remove();
+
     let textDiv = bubble.querySelector('.msg-text');
     if (!textDiv) {
         textDiv = document.createElement('div');
@@ -168,6 +262,8 @@ function applyMessageUpdate(messageId, newContent) {
         const reactions = bubble.querySelector('.msg-reactions');
         bubble.insertBefore(textDiv, reactions || bubble.firstChild);
     }
+    
+    textDiv.style.display = 'block';
     textDiv.innerText = newContent;
 }
 
