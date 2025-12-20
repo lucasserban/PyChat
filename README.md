@@ -66,7 +66,7 @@ Create and activate a virtual environment:
 python -m venv venv
 ```
 
-# Windows
+# 🪟 Windows
 ### Option 1: Python
 
 ```
@@ -78,7 +78,7 @@ venv\Scripts\activate
 Open the wsl terminal and follow the linux installation.
 
 
-# macOS/Linux
+# 🐧 macOS/Linux
 
 ### Option 1: Python
 
@@ -127,8 +127,22 @@ Add Friends: Go to "Direct Messages" to search for users. Once they accept your 
 
 Customize: Visit "My Account" to upload a profile picture and set a bio.
 
+## ✊ Difficulties
+
+- We had problems with the repository on github because the timeline of the commits was wrong and we had a lot of conflicts that needed to be resolved. And we needed to group more smaller commits into larger ones.
+
+- Another problem that we have faced is that we needed to use js in order to create a dynamic web application and none of us had previous experience with the language.
+
+- We also had problems when it came to the interaction between the python server and SQLite database system.
+
 ## 🤝 Contributers
 
 - Neacsa Leonard 325CA
+    - I reordered most of the commits and grouped them. I implemented a part of the functionality like the friend system and the react system. 
+
 - Tene Gabriel-Victor 325CA
+    - The functionalities that I have done to the project are the following: created the user profile pages UI and functionality and the direct messaging system.
+
+
 - Serban Lucas-Nicolae 325CA
+    - The functionalities that I have done to the project are the following: created the Global UI and functionality, the edit/delete feature of the messages and styling of the web application.
