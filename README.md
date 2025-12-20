@@ -56,7 +56,7 @@ PyChat is a real-time web messaging application built with Flask and Socket.IO. 
 
 1. Clone the repository:
 ```
-   git clone <repository-url>
+   git clone https://github.com/lucasserban/PyChat.git
    cd pychat
 ```
 
