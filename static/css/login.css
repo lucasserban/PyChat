@@ -15,17 +15,6 @@
     display: none;
 }
 
-body {
-    background: radial-gradient(1200px 600px at 10% -10%, #1f2937 0%, var(--bg) 50%, #0b1020 100%);
-    color: var(--text);
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-    background-repeat: no-repeat;
-    min-height: 100vh;
-    background-attachment: fixed;
-    overflow: hidden;
-    height: 100%;
-}
-
 .login-container {
     max-width: 420px;
     margin: 4.5rem auto 3rem;

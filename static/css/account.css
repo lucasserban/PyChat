@@ -1,15 +1,15 @@
 :root {
-  --bg: #0f172a;
-  --panel: #111827;
-  --panel-2: #0b1223;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --primary: #3b82f6;
-  --primary-700: #1d4ed8;
-  --danger: #ef4444;
-  --ring: rgba(59, 130, 246, 0.35);
-  --radius: 14px;
-  --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    --bg: #0f172a;
+    --panel: #111827;
+    --panel-2: #0b1223;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --primary: #3b82f6;
+    --primary-700: #1d4ed8;
+    --danger: #ef4444;
+    --ring: rgba(59, 130, 246, 0.35);
+    --radius: 14px;
+    --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 
 /* --- Header & Nav --- */
